@@ -25,7 +25,22 @@ export const routes: Routes = [
       {
         path: 'students',
         loadComponent: () =>
-          import('./features/students/students.placeholder').then((m) => m.StudentsPlaceholder),
+          import('./features/students/students-list.component').then((m) => m.StudentsListComponent),
+      },
+      {
+        path: 'students/new',
+        loadComponent: () =>
+          import('./features/students/student-create.component').then((m) => m.StudentCreateComponent),
+      },
+      {
+        path: 'students/:id',
+        loadComponent: () =>
+          import('./features/students/student-detail.component').then((m) => m.StudentDetailComponent),
+      },
+      {
+        path: 'students/:id/edit',
+        loadComponent: () =>
+          import('./features/students/student-edit.component').then((m) => m.StudentEditComponent),
       },
       {
         path: 'calendar',

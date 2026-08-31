@@ -1,0 +1,76 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0002-01-create-student
+      author: tutor-management
+      changes:
+        - createTable:
+            tableName: student
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: student_number, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: first_name, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: last_name, type: varchar(255), constraints: { nullable: false } }
+              - column: { name: email, type: varchar(320) }
+              - column: { name: phone, type: varchar(64) }
+              - column: { name: isikukood, type: varchar(32) }
+              - column: { name: age, type: int }
+              - column: { name: grade, type: int }
+              - column: { name: school, type: varchar(255) }
+              - column: { name: subject, type: varchar(255) }
+              - column: { name: goal, type: varchar(4000) }
+              - column: { name: level, type: varchar(64) }
+              - column: { name: notes, type: varchar(4000) }
+              - column: { name: lesson_format, type: varchar(16) }
+              - column: { name: lesson_price, type: "numeric(12,2)" }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: start_date, type: date }
+              - column: { name: end_date, type: date }
+              - column: { name: parent_name, type: varchar(255) }
+              - column: { name: parent_phone, type: varchar(64) }
+              - column: { name: parent_email, type: varchar(320) }
+              - column: { name: parent_secondary_phone, type: varchar(64) }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: student
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_student_user
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: student
+            columnNames: user_id, student_number
+            constraintName: uq_student_user_number
+        - createIndex:
+            tableName: student
+            indexName: ix_student_user
+            columns:
+              - column: { name: user_id }
+
+  - changeSet:
+      id: 0002-02-create-student-schedule
+      author: tutor-management
+      changes:
+        - createTable:
+            tableName: student_schedule
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: student_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: day_of_week, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: start_time, type: time }
+              - column: { name: end_time, type: time }
+              - column: { name: lessons_per_week, type: int }
+        - addForeignKeyConstraint:
+            baseTableName: student_schedule
+            baseColumnNames: student_id
+            referencedTableName: student
+            referencedColumnNames: id
+            constraintName: fk_student_schedule_student
+            onDelete: CASCADE
+        - createIndex:
+            tableName: student_schedule
+            indexName: ix_student_schedule_student
+            columns:
+              - column: { name: student_id }

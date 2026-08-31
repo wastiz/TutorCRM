@@ -3,6 +3,7 @@ package com.tutormgmt.common.error;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Standard error body (CLAUDE.md section 53).
@@ -22,15 +23,20 @@ public record ApiError(
         String message,
         OffsetDateTime timestamp,
         String path,
-        List<FieldViolation> errors
+        List<FieldViolation> errors,
+        Map<String, Object> details
 ) {
     public record FieldViolation(String field, String message) {}
 
     public static ApiError of(String code, String message, String path) {
-        return new ApiError(code, message, OffsetDateTime.now(), path, null);
+        return new ApiError(code, message, OffsetDateTime.now(), path, null, null);
     }
 
     public static ApiError of(String code, String message, String path, List<FieldViolation> errors) {
-        return new ApiError(code, message, OffsetDateTime.now(), path, errors);
+        return new ApiError(code, message, OffsetDateTime.now(), path, errors, null);
+    }
+
+    public static ApiError withDetails(String code, String message, String path, Map<String, Object> details) {
+        return new ApiError(code, message, OffsetDateTime.now(), path, null, details);
     }
 }

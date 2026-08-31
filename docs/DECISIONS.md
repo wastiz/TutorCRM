@@ -22,6 +22,10 @@ plus phase-by-phase progress.
 | Import field count | §14 maps 16 fields (0–15); real examples in §57/§58 contain 17 tab fields (extra empty reserved slot before parent phone) | Parser is tolerant (§24): maps by position against the real examples, emits **warnings** instead of failing on count mismatch. Raw input is retained in the import DTO. |
 | `parentSecondaryPhone` from import | No matching field on `Student` in §10.3 | `parentSecondaryPhone` (`String`) added to `Student`. |
 | `Report` entity | §10.5 persists a `Report` row; `Report.md` computes on demand | Report is **computed on demand** from `Lesson`; a snapshot row is persisted only when the user exports to Sheets. |
+| Import package name | §17 shows `student/import/` | `import` is a Java reserved word — the package is `student/importer/`. |
+| `POST /api/students/import/create` | §49 defines it separately | Implemented; delegates to the same create path as `POST /api/students` (validation + duplicate detection included). |
+| Duplicate detection response | §26 shows a UI choice, no wire format given | `POST /api/students` returns **409 `POSSIBLE_DUPLICATE`** with `details.duplicates: [StudentSummary]`; `ignoreDuplicates:true` in the body overrides. A `POST /api/students/duplicates` lookup backs the pre-submit check. |
+| Student archival | §48 has `DELETE`; §39/§60 say "archive" | `DELETE` hard-deletes; separate `POST /api/students/{id}/archive` sets status `FINISHED` + `endDate`. |
 | Cross-site cookie | Frontend + backend as separate Railway services breaks a `SameSite=Lax` cookie | Prod deploys the SPA behind nginx that proxies `/api`, `/oauth2`, `/login` to the backend → same origin. `JWT_COOKIE_SAMESITE` / `JWT_COOKIE_SECURE` are env-configurable for a split-domain setup (`None` + `Secure`). |
 | CSRF | Cookie auth normally needs CSRF protection | CSRF disabled; mitigated by `SameSite` cookie + stateless JWT + explicit CORS allow-list. Acceptable for a single-user MVP; revisit if multi-tenant. |
 
@@ -39,7 +43,7 @@ user can access — `drive.file` would only see app-created files).
 
 - [x] **Phase 1 — Project setup**: Gradle Spring Boot 3.5.9 skeleton, Angular 22 SPA shell, Liquibase baseline, Dockerfiles, `docker-compose` (Postgres), CORS/error-handling infra, Testcontainers wiring.
 - [x] **Phase 2 — Authentication**: Google OAuth2 login, `User` + `Authentication` slices, encrypted token storage, JWT cookie session, `/api/auth/me` + `/api/auth/logout`, Angular auth guard/interceptors/login screen.
-- [ ] Phase 3 — Student (CRUD, import parser, preview, duplicate detection)
+- [x] **Phase 3 — Student**: `student` + `student/schedule` + `student/importer` slices; CRUD API, per-user sequential `studentNumber`, `StudentSchedule` rows, deterministic `TabStudentImportParser` (17 unit tests incl. both real examples), `/import/parse` + `/import/create`, duplicate detection; Angular students list (search/filter), shared reactive form, create screen with Manual / Import-from-message tabs + warnings + preview, edit, detail, duplicate + confirm dialogs. Backend 38 tests green.
 - [ ] Phase 4 — Lessons
 - [ ] Phase 5 — Google Calendar
 - [ ] Phase 6 — Reports

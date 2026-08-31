@@ -28,8 +28,10 @@ public class GlobalExceptionHandler {
         } else {
             log.debug("API error [{}] at {}: {}", ex.getCode(), req.getRequestURI(), ex.getMessage());
         }
-        return ResponseEntity.status(ex.getStatus())
-                .body(ApiError.of(ex.getCode(), ex.getMessage(), req.getRequestURI()));
+        ApiError body = ex.getDetails() == null
+                ? ApiError.of(ex.getCode(), ex.getMessage(), req.getRequestURI())
+                : ApiError.withDetails(ex.getCode(), ex.getMessage(), req.getRequestURI(), ex.getDetails());
+        return ResponseEntity.status(ex.getStatus()).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
