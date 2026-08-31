@@ -60,6 +60,22 @@ cd backend  && ./gradlew test      # JUnit 5 + Testcontainers PostgreSQL
 cd frontend && npm test            # Vitest
 ```
 
-## Build order
+## Status
 
-Implemented phase by phase per `CLAUDE.md` §62. Progress is tracked in `docs/DECISIONS.md`.
+All 8 phases from `CLAUDE.md` §62 are implemented:
+
+| Phase | Scope |
+|-------|-------|
+| 1 | Project setup — Gradle/Spring Boot 3.5, Angular 22, Liquibase, Docker, Railway config |
+| 2 | Google OAuth2 login → app JWT cookie session, `user` + `authentication` slices |
+| 3 | Student CRUD, `StudentSchedule`, deterministic raw-message import parser + preview, duplicate detection |
+| 4 | Lesson CRUD, status flow, weekly recurring, FullCalendar page, per-student overview |
+| 5 | Google Calendar integration — event create/update/delete, sync-status fallback, settings |
+| 6 | Monthly report computed from `Lesson` rows (Report.md) |
+| 7 | Export the report to an existing Google Sheet (per-month worksheet, formatting) |
+| 8 | Dashboard aggregates |
+
+Backend: 59 tests (JUnit 5 + Testcontainers). Frontend builds + Vitest green.
+End-to-end flow (import → student → lessons → report → dashboard) verified locally;
+see `docs/DECISIONS.md` for the full decision log and what still needs real Google
+credentials / a Railway account.

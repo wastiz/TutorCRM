@@ -13,6 +13,8 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
 
     List<Student> findByUserIdOrderByStudentNumberAsc(UUID userId);
 
+    long countByUserIdAndStatus(UUID userId, StudentStatus status);
+
     boolean existsByUserIdAndEmailIgnoreCase(UUID userId, String email);
 
     boolean existsByUserIdAndPhone(UUID userId, String phone);
