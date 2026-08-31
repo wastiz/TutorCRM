@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0004-01-create-user-settings
+      author: tutor-management
+      changes:
+        - createTable:
+            tableName: user_settings
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: calendar_id, type: varchar(255) }
+              - column: { name: calendar_summary, type: varchar(512) }
+              - column: { name: report_spreadsheet_id, type: varchar(255) }
+              - column: { name: report_spreadsheet_name, type: varchar(512) }
+              - column: { name: report_worksheet_title, type: varchar(255) }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: user_settings
+            columnNames: user_id
+            constraintName: uq_user_settings_user
+        - addForeignKeyConstraint:
+            baseTableName: user_settings
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_user_settings_user
+            onDelete: CASCADE

@@ -8,6 +8,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmDialogComponent } from '../../core/ui/confirm-dialog.component';
 import { LessonDialogComponent, LessonDialogResult } from '../lessons/lesson-dialog.component';
@@ -28,6 +29,7 @@ import { StudentService } from './student.service';
     MatMenuModule,
     MatDividerModule,
     MatProgressBarModule,
+    MatTooltipModule,
   ],
   template: `
     <div class="page">
@@ -121,6 +123,13 @@ import { StudentService } from './student.service';
                   <div class="lesson-row">
                     <span>{{ l.startTime | date: 'EEE d MMM, HH:mm' }} – {{ l.endTime | date: 'HH:mm' }}</span>
                     <span class="muted">€{{ l.price }}</span>
+                    @if (l.calendarSyncStatus === 'FAILED') {
+                      <button mat-icon-button matTooltip="Calendar sync failed — retry" (click)="retrySync(l)">
+                        <mat-icon color="warn">sync_problem</mat-icon>
+                      </button>
+                    } @else if (l.calendarSyncStatus === 'SYNCED') {
+                      <mat-icon class="synced" matTooltip="In Google Calendar">event_available</mat-icon>
+                    }
                     <span class="spacer"></span>
                     <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                     <mat-menu #menu="matMenu">
@@ -242,6 +251,11 @@ export class StudentDetailComponent implements OnInit {
           ? this.lessonService.cancel(l.id)
           : this.lessonService.noShow(l.id);
     await firstValueFrom(op);
+    this.reloadLessons();
+  }
+
+  async retrySync(l: Lesson): Promise<void> {
+    await firstValueFrom(this.lessonService.syncCalendar(l.id));
     this.reloadLessons();
   }
 

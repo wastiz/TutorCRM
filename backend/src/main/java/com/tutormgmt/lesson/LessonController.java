@@ -89,4 +89,9 @@ public class LessonController {
                                   @Valid @RequestBody RepeatLessonRequest request) {
         return service.repeat(principal.userId(), id, request);
     }
+
+    @PostMapping("/{id}/sync-calendar")
+    public LessonDto syncCalendar(@AuthenticationPrincipal AppPrincipal principal, @PathVariable UUID id) {
+        return service.syncCalendar(principal.userId(), id);
+    }
 }

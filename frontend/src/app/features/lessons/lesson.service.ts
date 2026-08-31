@@ -63,4 +63,8 @@ export class LessonService {
   repeat(id: string, request: RepeatLessonRequest): Observable<Lesson[]> {
     return this.http.post<Lesson[]>(`${this.base}/${id}/repeat`, request);
   }
+
+  syncCalendar(id: string): Observable<Lesson> {
+    return this.http.post<Lesson>(`${this.base}/${id}/sync-calendar`, {});
+  }
 }

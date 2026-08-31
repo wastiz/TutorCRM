@@ -31,6 +31,15 @@ plus phase-by-phase progress.
 | Cross-site cookie | Frontend + backend as separate Railway services breaks a `SameSite=Lax` cookie | Prod deploys the SPA behind nginx that proxies `/api`, `/oauth2`, `/login` to the backend → same origin. `JWT_COOKIE_SAMESITE` / `JWT_COOKIE_SECURE` are env-configurable for a split-domain setup (`None` + `Secure`). |
 | CSRF | Cookie auth normally needs CSRF protection | CSRF disabled; mitigated by `SameSite` cookie + stateless JWT + explicit CORS allow-list. Acceptable for a single-user MVP; revisit if multi-tenant. |
 
+## More resolutions (Phase 5)
+
+| Area | Decision |
+|------|----------|
+| Where "which calendar / spreadsheet" is stored | New `settings` slice: `user_settings` table, `GET/PUT /api/settings`. |
+| Lesson ↔ Calendar coupling | Lesson slice defines a `LessonCalendarGateway` port; the Google adapter lives in `integration/google/calendar` and is the only place that imports Google SDK classes (CLAUDE.md §63). |
+| `CalendarSyncStatus` when Google is not connected / no calendar chosen | `DISABLED` (not `PENDING` — there is no background sync worker in the MVP). `FAILED` is set only when a real push attempt errors; the user retries via `POST /api/lessons/{id}/sync-calendar`. |
+| Token storage vs Spring's `OAuth2AuthorizedClientService` | We persist the encrypted refresh token in our `authentication` table and rebuild `UserCredentials` per call; rotated access tokens are written back. |
+
 ## Google scopes
 
 `openid`, `email`, `profile`,
@@ -47,7 +56,7 @@ user can access — `drive.file` would only see app-created files).
 - [x] **Phase 2 — Authentication**: Google OAuth2 login, `User` + `Authentication` slices, encrypted token storage, JWT cookie session, `/api/auth/me` + `/api/auth/logout`, Angular auth guard/interceptors/login screen.
 - [x] **Phase 3 — Student**: `student` + `student/schedule` + `student/importer` slices; CRUD API, per-user sequential `studentNumber`, `StudentSchedule` rows, deterministic `TabStudentImportParser` (17 unit tests incl. both real examples), `/import/parse` + `/import/create`, duplicate detection; Angular students list (search/filter), shared reactive form, create screen with Manual / Import-from-message tabs + warnings + preview, edit, detail, duplicate + confirm dialogs. Backend 38 tests green.
 - [x] **Phase 4 — Lessons**: `lesson` slice — `Lesson` entity (frozen per-lesson `price`, `CalendarSyncStatus`), `LessonStatus`, CRUD API, `complete`/`cancel`/`no-show`, `POST /{id}/repeat` weekly generation (CLAUDE.md §36), `GET /student/{id}/overview` (upcoming/past/this-month/earnings), `LessonQueryService` feeds `nextLessonAt` into the students list and blocks deleting a student with lessons. Liquibase 0003. Angular: lesson create/edit dialog (with inline "repeat"), FullCalendar calendar page (month/week/day, click-to-create, status colours), student detail lessons section. `sync-calendar` endpoint deferred to Phase 5. Backend 46 tests green.
-- [ ] Phase 5 — Google Calendar
+- [x] **Phase 5 — Google Calendar**: `integration/google/**` — `GoogleApiFactory` (auto-refreshing `UserCredentials`, persists rotated access token), `GoogleCalendarService` (list/create/update/delete events, extended properties `application=tutor-management` + `lessonId`), `GoogleErrors` (403→friendly, etc.), `GoogleCalendarLessonAdapter` implements the lesson slice's `LessonCalendarGateway` port. `settings` slice (`UserSettings` + `/api/settings`) stores the chosen calendar. `LessonService` mirrors create/update/status/delete to Calendar, marking `calendarSyncStatus` SYNCED/FAILED/DISABLED — a lesson is never lost on Google failure (§34). `POST /api/lessons/{id}/sync-calendar` retry. `GET /api/integrations/google/{status,calendars}`, `POST .../disconnect`. Angular Settings page (connect/reconnect/disconnect, calendar picker), sync badges + retry on student detail. Liquibase 0004. Live Google calls need real OAuth creds — untestable here; layer is isolated + unit-safe (46 backend tests green).
 - [ ] Phase 6 — Reports
 - [ ] Phase 7 — Google Sheets export
 - [ ] Phase 8 — Dashboard

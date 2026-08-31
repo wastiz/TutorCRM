@@ -59,7 +59,8 @@ class LessonServiceIT extends AbstractPostgresIT {
 
         assertThat(lesson.price()).isEqualByComparingTo("20.00");
         assertThat(lesson.status()).isEqualTo(LessonStatus.PLANNED);
-        assertThat(lesson.calendarSyncStatus()).isEqualTo(CalendarSyncStatus.PENDING);
+        // Google not connected in tests -> calendar sync is disabled, lesson still saved (CLAUDE.md 34)
+        assertThat(lesson.calendarSyncStatus()).isEqualTo(CalendarSyncStatus.DISABLED);
         assertThat(lesson.studentName()).isEqualTo("Kirill Tsarenkov");
     }
 

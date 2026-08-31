@@ -24,6 +24,7 @@ public class LessonService {
     private final LessonRepository repository;
     private final StudentRepository studentRepository;
     private final LessonMapper mapper;
+    private final LessonCalendarGateway calendarGateway;
 
     @Transactional(readOnly = true)
     public List<LessonDto> list(UUID userId, UUID studentId, LessonStatus status,
@@ -54,6 +55,8 @@ public class LessonService {
         lesson.setStatus(request.status() == null ? LessonStatus.PLANNED : request.status());
         lesson.setNotes(trimToNull(request.notes()));
         Lesson saved = repository.save(lesson);
+        pushToCalendar(saved);
+        saved = repository.save(saved);
         log.info("Created lesson {} for student {} ({})", saved.getId(), student.getId(), saved.getStartTime());
         return withStudentNames(List.of(saved)).get(0);
     }
@@ -74,21 +77,33 @@ public class LessonService {
             lesson.setStatus(request.status());
         }
         lesson.setNotes(trimToNull(request.notes()));
-        if (lesson.getCalendarSyncStatus() == CalendarSyncStatus.SYNCED) {
-            lesson.setCalendarSyncStatus(CalendarSyncStatus.PENDING); // needs re-push after an edit
-        }
+        pushToCalendar(lesson);
         return withStudentNames(List.of(repository.save(lesson))).get(0);
     }
 
     @Transactional
     public void delete(UUID userId, UUID id) {
-        repository.delete(require(userId, id));
+        Lesson lesson = require(userId, id);
+        try {
+            calendarGateway.remove(userId, lesson.getGoogleCalendarId(), lesson.getGoogleCalendarEventId());
+        } catch (RuntimeException e) {
+            log.warn("Could not remove calendar event for lesson {}: {}", id, e.getMessage());
+        }
+        repository.delete(lesson);
     }
 
     @Transactional
     public LessonDto changeStatus(UUID userId, UUID id, LessonStatus status) {
         Lesson lesson = require(userId, id);
         lesson.setStatus(status);
+        pushToCalendar(lesson);
+        return withStudentNames(List.of(repository.save(lesson))).get(0);
+    }
+
+    @Transactional
+    public LessonDto syncCalendar(UUID userId, UUID id) {
+        Lesson lesson = require(userId, id);
+        pushToCalendar(lesson);
         return withStudentNames(List.of(repository.save(lesson))).get(0);
     }
 
@@ -110,6 +125,8 @@ public class LessonService {
             created.add(copy);
         }
         List<Lesson> saved = repository.saveAll(created);
+        saved.forEach(this::pushToCalendar);
+        saved = repository.saveAll(saved);
         log.info("Generated {} recurring lessons from {}", saved.size(), id);
         return withStudentNames(saved);
     }
@@ -144,6 +161,35 @@ public class LessonService {
     }
 
     // --- internals ---
+
+    /** Best-effort mirror to Google Calendar. Never throws — a failure only marks the lesson FAILED. */
+    private void pushToCalendar(Lesson lesson) {
+        if (!calendarGateway.enabledFor(lesson.getUserId())) {
+            lesson.setCalendarSyncStatus(CalendarSyncStatus.DISABLED);
+            return;
+        }
+        try {
+            LessonCalendarGateway.LessonSyncCommand cmd = new LessonCalendarGateway.LessonSyncCommand(
+                    lesson.getId(), studentName(lesson.getStudentId()),
+                    lesson.getStartTime(), lesson.getEndTime(), lesson.getPrice(),
+                    lesson.getStatus(), lesson.getNotes(),
+                    lesson.getGoogleCalendarId(), lesson.getGoogleCalendarEventId());
+            calendarGateway.sync(lesson.getUserId(), cmd).ifPresent(link -> {
+                lesson.setGoogleCalendarId(link.calendarId());
+                lesson.setGoogleCalendarEventId(link.eventId());
+            });
+            lesson.setCalendarSyncStatus(CalendarSyncStatus.SYNCED);
+        } catch (RuntimeException e) {
+            log.warn("Calendar sync failed for lesson {}: {}", lesson.getId(), e.getMessage());
+            lesson.setCalendarSyncStatus(CalendarSyncStatus.FAILED);
+        }
+    }
+
+    private String studentName(UUID studentId) {
+        return studentRepository.findById(studentId)
+                .map(s -> (s.getFirstName() + " " + s.getLastName()).trim())
+                .orElse(null);
+    }
 
     private List<LessonDto> withStudentNames(List<Lesson> lessons) {
         if (lessons.isEmpty()) {
