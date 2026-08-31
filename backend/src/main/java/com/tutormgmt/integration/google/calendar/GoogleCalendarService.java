@@ -4,13 +4,19 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventAttendee;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.tutormgmt.integration.google.GoogleApiFactory;
 import com.tutormgmt.integration.google.GoogleErrors;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +56,86 @@ public class GoogleCalendarService {
             throw GoogleErrors.translate("list your calendars", e);
         }
     }
+
+    /** Timed events (not all-day) in the window, recurrences expanded. */
+    public List<FetchedEvent> listEvents(UUID userId, String calendarId,
+                                         OffsetDateTime from, OffsetDateTime to) {
+        try {
+            Calendar client = apiFactory.calendar(userId);
+            List<FetchedEvent> out = new ArrayList<>();
+            String pageToken = null;
+            do {
+                var response = client.events().list(calendarId)
+                        .setTimeMin(new DateTime(from.toInstant().toEpochMilli()))
+                        .setTimeMax(new DateTime(to.toInstant().toEpochMilli()))
+                        .setSingleEvents(true)
+                        .setOrderBy("startTime")
+                        .setMaxResults(2500)
+                        .setShowDeleted(false)
+                        .setPageToken(pageToken)
+                        .execute();
+                for (Event e : response.getItems()) {
+                    OffsetDateTime start = toOffset(e.getStart());
+                    OffsetDateTime end = toOffset(e.getEnd());
+                    if (start == null || end == null || "cancelled".equals(e.getStatus())) {
+                        continue; // all-day or cancelled
+                    }
+                    Map<String, String> priv = e.getExtendedProperties() == null
+                            ? Map.of()
+                            : Optional.ofNullable(e.getExtendedProperties().getPrivate()).orElse(Map.of());
+                    boolean createdByApp = APP_PROPERTY_VALUE.equals(priv.get(APP_PROPERTY));
+                    UUID lessonId = parseUuid(priv.get(LESSON_ID_PROPERTY));
+                    List<String> attendees = e.getAttendees() == null ? List.of()
+                            : e.getAttendees().stream().map(EventAttendee::getEmail)
+                              .filter(a -> a != null).map(String::toLowerCase).toList();
+                    out.add(new FetchedEvent(e.getId(), calendarId, e.getSummary(), e.getDescription(),
+                            start, end, lessonId, createdByApp, attendees, e.getHtmlLink()));
+                }
+                pageToken = response.getNextPageToken();
+            } while (pageToken != null);
+            return out;
+        } catch (IOException e) {
+            throw GoogleErrors.translate("read events from your calendar", e);
+        }
+    }
+
+    /** Tags an existing (user-created) event as managed by a lesson, preserving other private props. */
+    public void linkEventToLesson(UUID userId, String calendarId, String eventId, UUID lessonId) {
+        try {
+            Calendar client = apiFactory.calendar(userId);
+            Event existing = client.events().get(calendarId, eventId).execute();
+            Map<String, String> priv = new HashMap<>();
+            if (existing.getExtendedProperties() != null && existing.getExtendedProperties().getPrivate() != null) {
+                priv.putAll(existing.getExtendedProperties().getPrivate());
+            }
+            priv.put(APP_PROPERTY, APP_PROPERTY_VALUE);
+            priv.put(LESSON_ID_PROPERTY, lessonId.toString());
+            Event patch = new Event().setExtendedProperties(
+                    new Event.ExtendedProperties().setPrivate(priv));
+            client.events().patch(calendarId, eventId, patch).execute();
+        } catch (IOException e) {
+            throw GoogleErrors.translate("link the calendar event to a lesson", e);
+        }
+    }
+
+    private static OffsetDateTime toOffset(EventDateTime edt) {
+        if (edt == null || edt.getDateTime() == null) {
+            return null;
+        }
+        return Instant.ofEpochMilli(edt.getDateTime().getValue()).atOffset(ZoneOffset.UTC);
+    }
+
+    private static UUID parseUuid(String s) {
+        try {
+            return s == null ? null : UUID.fromString(s);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public record FetchedEvent(String id, String calendarId, String summary, String description,
+                               OffsetDateTime start, OffsetDateTime end, UUID linkedLessonId,
+                               boolean createdByApp, List<String> attendeeEmails, String htmlLink) {}
 
     public SyncedEvent createEvent(UUID userId, String calendarId, CalendarEventData data) {
         try {

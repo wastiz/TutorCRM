@@ -3,6 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  GoogleImportPreview,
+  GoogleImportRequest,
+  GoogleImportResult,
   Lesson,
   LessonRequest,
   LessonStatus,
@@ -66,5 +69,17 @@ export class LessonService {
 
   syncCalendar(id: string): Observable<Lesson> {
     return this.http.post<Lesson>(`${this.base}/${id}/sync-calendar`, {});
+  }
+
+  // --- Google Calendar -> app import ---
+
+  googleImportPreview(from: string, to: string): Observable<GoogleImportPreview> {
+    return this.http.get<GoogleImportPreview>(`${this.base}/google/preview`, {
+      params: new HttpParams().set('from', from).set('to', to),
+    });
+  }
+
+  googleImport(request: GoogleImportRequest): Observable<GoogleImportResult> {
+    return this.http.post<GoogleImportResult>(`${this.base}/google/import`, request);
   }
 }

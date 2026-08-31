@@ -1,13 +1,12 @@
 package com.tutormgmt.lesson;
 
+import com.tutormgmt.common.web.TimeParams;
 import com.tutormgmt.security.AppPrincipal;
 import jakarta.validation.Valid;
 import java.net.URI;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,9 +31,10 @@ public class LessonController {
     public List<LessonDto> list(@AuthenticationPrincipal AppPrincipal principal,
                                 @RequestParam(required = false) UUID studentId,
                                 @RequestParam(required = false) LessonStatus status,
-                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
-        return service.list(principal.userId(), studentId, status, from, to);
+                                @RequestParam(required = false) String from,
+                                @RequestParam(required = false) String to) {
+        return service.list(principal.userId(), studentId, status,
+                TimeParams.parseOrNull(from), TimeParams.parseOrNull(to));
     }
 
     @GetMapping("/{id}")

@@ -70,6 +70,31 @@ user can access — `drive.file` would only see app-created files).
 - [x] **Phase 7 — Google Sheets export**: `report/export/ReportSheetGrid` (pure transform → the tutor's exact A–J layout: title row, headers, student rows, total row with G=count / J=amount per Report.md §5, §15); `MonthlyReportSheetExporter` port + `GoogleSheetsReportExporter` adapter (integration side); `GoogleSheetsService` (Drive `files.list` for spreadsheets, Sheets `get`/`values.update`/`values.clear`/`batchUpdate` for per-month worksheet create + bold/border/number-format/auto-resize per §16). `POST /api/reports/monthly/export {month, overwrite}` → validates `exportable`, requires a configured spreadsheet, per-month worksheet titled "август 26" unless a fixed title is set, `409 WORKSHEET_EXISTS` when it exists and `overwrite=false` (§18), persists a `Report` snapshot. `GET /api/integrations/google/spreadsheets[/{id}]`. Angular: Settings spreadsheet + worksheet pickers, Reports export button with the "Update existing / Cancel" confirm. `ReportSheetGridTest` + `ReportServiceExportTest` (mocked) — 57 backend tests green. Live Sheets writes need real OAuth creds.
 - [x] **Phase 8 — Dashboard**: `dashboard` slice — `GET /api/dashboard` → active students, lessons today / this week, completed this month, earned-so-far vs expected earnings (COMPLETED + PLANNED this month), next 6 upcoming lessons. Angular dashboard with stat tiles + upcoming list. `DashboardServiceIT`. 59 backend tests green.
 
+## Post-MVP: Google Calendar → app import (owner request, 2026-08-31)
+
+`CLAUDE.md` §61 lists "two-way Google Calendar synchronization" as out of MVP scope. The owner
+asked for the pull direction (create events in your own Google Calendar, app imports them as
+lessons), keeping in-app creation. Added, review-then-confirm style (like the message import):
+
+- **Bug fixed:** the Calendar page fetched `/api/lessons?from=2026-08-31` (date-only, from
+  FullCalendar) and the backend only accepted a full date-time → 500 → nothing rendered.
+  Frontend now sends `info.start.toISOString()`; backend `TimeParams` accepts date **or**
+  date-time on `from`/`to`.
+- `CalendarEventSource` port (lesson slice) + `GoogleCalendarEventSourceAdapter` (integration).
+  `GoogleCalendarService.listEvents` (recurrences expanded, all-day skipped) + `linkEventToLesson`
+  (writes `application`/`lessonId` private props back onto a user-created event).
+- `LessonImportService`: `preview(from,to)` classifies events into **new** (guess a student from
+  the title / attendee email — single unambiguous match only), **moved** (a linked lesson whose
+  event time changed in Google), and **already-linked**. `importSelected` creates `PLANNED`
+  lessons linked to the events (`calendarSyncStatus = SYNCED`), tags each event, and optionally
+  pulls time changes for moved lessons.
+- `GET /api/lessons/google/preview`, `POST /api/lessons/google/import`.
+- Calendar page: **"Sync from Google"** button with a badge counting importable events in the
+  visible range; dialog to pick/confirm students and prices.
+- 4 `LessonImportServiceIT` tests (fake `CalendarEventSource`) — 63 backend tests green.
+  Verified live against the owner's real calendar: preview returns events, student-match guessing,
+  moved detection, and dedup of already-linked events all work; no live mutation performed.
+
 ## End-to-end verification (2026-08-31)
 
 Ran against local Postgres with a minted dev session cookie:

@@ -52,3 +52,47 @@ export const LESSON_STATUS_COLOR: Record<LessonStatus, string> = {
   CANCELLED: '#9e9e9e',
   NO_SHOW: '#c62828',
 };
+
+// --- Google Calendar -> app import ---
+
+export interface GoogleImportNewEvent {
+  eventId: string;
+  calendarId: string;
+  summary: string | null;
+  start: string;
+  end: string;
+  suggestedStudentId: string | null;
+  suggestedStudentName: string | null;
+  suggestedPrice: number | null;
+}
+
+export interface GoogleImportMovedLesson {
+  lessonId: string;
+  studentName: string;
+  eventId: string;
+  currentStart: string;
+  currentEnd: string;
+  newStart: string;
+  newEnd: string;
+}
+
+export interface GoogleImportPreview {
+  enabled: boolean;
+  from: string;
+  to: string;
+  newEvents: GoogleImportNewEvent[];
+  movedLessons: GoogleImportMovedLesson[];
+  alreadyLinked: number;
+}
+
+export interface GoogleImportRequest {
+  from: string;
+  to: string;
+  items: { eventId: string; studentId: string; price?: number | null }[];
+  updateMoved: boolean;
+}
+
+export interface GoogleImportResult {
+  imported: number;
+  updated: number;
+}
