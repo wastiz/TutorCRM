@@ -1,0 +1,48 @@
+import { Routes } from '@angular/router';
+import { authGuard, guestGuard } from './core/auth/auth.guard';
+
+export const routes: Routes = [
+  {
+    path: 'login',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./features/login/auth-callback.component').then((m) => m.AuthCallbackComponent),
+  },
+  {
+    path: '',
+    canActivate: [authGuard],
+    loadComponent: () => import('./core/layout/shell.component').then((m) => m.ShellComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      },
+      {
+        path: 'students',
+        loadComponent: () =>
+          import('./features/students/students.placeholder').then((m) => m.StudentsPlaceholder),
+      },
+      {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./features/calendar/calendar.placeholder').then((m) => m.CalendarPlaceholder),
+      },
+      {
+        path: 'reports',
+        loadComponent: () =>
+          import('./features/reports/reports.placeholder').then((m) => m.ReportsPlaceholder),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.placeholder').then((m) => m.SettingsPlaceholder),
+      },
+    ],
+  },
+  { path: '**', redirectTo: '' },
+];

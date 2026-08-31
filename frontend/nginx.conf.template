@@ -1,0 +1,25 @@
+# Rendered by nginx' envsubst entrypoint. ${BACKEND_URL} and ${PORT} come from the environment.
+server {
+    listen       ${PORT};
+    server_name  _;
+    root   /usr/share/nginx/html;
+    index  index.html;
+
+    # Static assets with long cache; index.html always revalidated.
+    location ~* \.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Backend passthrough — keeps the SPA and API same-origin so the session cookie works.
+    location /api/       { proxy_pass ${BACKEND_URL}; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; }
+    location /oauth2/    { proxy_pass ${BACKEND_URL}; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; }
+    location /login/     { proxy_pass ${BACKEND_URL}; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; }
+    location /actuator/  { proxy_pass ${BACKEND_URL}; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; }
+
+    # SPA fallback.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

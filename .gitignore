@@ -1,0 +1,31 @@
+# --- Build output ---
+backend/build/
+backend/bin/
+backend/.gradle/
+backend/out/
+frontend/dist/
+frontend/.angular/
+frontend/node_modules/
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Secrets / local env ---
+.env
+.env.local
+*.local.env
+backend/src/main/resources/application-local.yml
+!backend/src/main/resources/application-local.example.yml
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Local tooling ---
+/tools/
