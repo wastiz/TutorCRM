@@ -40,6 +40,15 @@ plus phase-by-phase progress.
 | `CalendarSyncStatus` when Google is not connected / no calendar chosen | `DISABLED` (not `PENDING` — there is no background sync worker in the MVP). `FAILED` is set only when a real push attempt errors; the user retries via `POST /api/lessons/{id}/sync-calendar`. |
 | Token storage vs Spring's `OAuth2AuthorizedClientService` | We persist the encrypted refresh token in our `authentication` table and rebuild `UserCredentials` per call; rotated access tokens are written back. |
 
+## More resolutions (Phase 6)
+
+| Area | Decision |
+|------|----------|
+| Report month boundary timezone | Lessons are `timestamptz` but we don't store a per-tutor timezone; the report window is `[month.atDay(1) 00:00Z, nextMonth.atDay(1) 00:00Z)`. Good enough for a single-tutor MVP; revisit if tutors span timezones. |
+| `StudentReportRowDto.lessonPrice` when a student had several prices in the month | `null` (+ a warning). `total` is always the true sum of the individual `Lesson.price` values, so the month total stays correct. |
+| `errors` vs `warnings` | `errors` block export (Report.md §22); the only one that can currently fire is "a completed lesson references a student that no longer exists" (shouldn't happen — `lesson.student_id` FK is `RESTRICT`). `warnings` (multi-price) allow export after the user confirms. |
+| `Report` entity | Persisted only as an **export snapshot** (Phase 7); the Reports page always shows freshly computed figures. |
+
 ## Google scopes
 
 `openid`, `email`, `profile`,
@@ -57,6 +66,6 @@ user can access — `drive.file` would only see app-created files).
 - [x] **Phase 3 — Student**: `student` + `student/schedule` + `student/importer` slices; CRUD API, per-user sequential `studentNumber`, `StudentSchedule` rows, deterministic `TabStudentImportParser` (17 unit tests incl. both real examples), `/import/parse` + `/import/create`, duplicate detection; Angular students list (search/filter), shared reactive form, create screen with Manual / Import-from-message tabs + warnings + preview, edit, detail, duplicate + confirm dialogs. Backend 38 tests green.
 - [x] **Phase 4 — Lessons**: `lesson` slice — `Lesson` entity (frozen per-lesson `price`, `CalendarSyncStatus`), `LessonStatus`, CRUD API, `complete`/`cancel`/`no-show`, `POST /{id}/repeat` weekly generation (CLAUDE.md §36), `GET /student/{id}/overview` (upcoming/past/this-month/earnings), `LessonQueryService` feeds `nextLessonAt` into the students list and blocks deleting a student with lessons. Liquibase 0003. Angular: lesson create/edit dialog (with inline "repeat"), FullCalendar calendar page (month/week/day, click-to-create, status colours), student detail lessons section. `sync-calendar` endpoint deferred to Phase 5. Backend 46 tests green.
 - [x] **Phase 5 — Google Calendar**: `integration/google/**` — `GoogleApiFactory` (auto-refreshing `UserCredentials`, persists rotated access token), `GoogleCalendarService` (list/create/update/delete events, extended properties `application=tutor-management` + `lessonId`), `GoogleErrors` (403→friendly, etc.), `GoogleCalendarLessonAdapter` implements the lesson slice's `LessonCalendarGateway` port. `settings` slice (`UserSettings` + `/api/settings`) stores the chosen calendar. `LessonService` mirrors create/update/status/delete to Calendar, marking `calendarSyncStatus` SYNCED/FAILED/DISABLED — a lesson is never lost on Google failure (§34). `POST /api/lessons/{id}/sync-calendar` retry. `GET /api/integrations/google/{status,calendars}`, `POST .../disconnect`. Angular Settings page (connect/reconnect/disconnect, calendar picker), sync badges + retry on student detail. Liquibase 0004. Live Google calls need real OAuth creds — untestable here; layer is isolated + unit-safe (46 backend tests green).
-- [ ] Phase 6 — Reports
+- [x] **Phase 6 — Reports**: `report` slice — `ReportService.generate(userId, YearMonth)` computes the monthly payout report purely from `COMPLETED` lessons in `[firstOfMonth, firstOfNextMonth)` UTC (Report.md §8), grouped by student, **price from `Lesson.price`** not the current student price (§9), sorted by `studentNumber` ASC (§20), Russian month title "август 26" (§3), multi-price → warning not blocker (§11, §22), missing email/parent → empty cell (§21). `GET /api/reports/monthly?month=yyyy-MM` → `MonthlyReportDto`. Persisted `Report` snapshot entity + Liquibase 0005 (written on export, Phase 7). Angular Reports page: month picker, Report.md column layout with ИТОГО footer row, warning/error banners, Export button (wired Phase 7). 7 `ReportServiceIT` tests — 53 backend tests green.
 - [ ] Phase 7 — Google Sheets export
 - [ ] Phase 8 — Dashboard

@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0005-01-create-report
+      author: tutor-management
+      changes:
+        - createTable:
+            tableName: report
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: report_month, type: varchar(7), constraints: { nullable: false } }
+              - column: { name: total_lessons, type: int, constraints: { nullable: false } }
+              - column: { name: total_amount, type: "numeric(14,2)", constraints: { nullable: false } }
+              - column: { name: spreadsheet_id, type: varchar(255) }
+              - column: { name: worksheet_title, type: varchar(255) }
+              - column: { name: generated_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: report
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_report_user
+            onDelete: CASCADE
+        - createIndex:
+            tableName: report
+            indexName: ix_report_user_month
+            columns:
+              - column: { name: user_id }
+              - column: { name: report_month }

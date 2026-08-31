@@ -50,7 +50,7 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () =>
-          import('./features/reports/reports.placeholder').then((m) => m.ReportsPlaceholder),
+          import('./features/reports/reports.component').then((m) => m.ReportsComponent),
       },
       {
         path: 'settings',
