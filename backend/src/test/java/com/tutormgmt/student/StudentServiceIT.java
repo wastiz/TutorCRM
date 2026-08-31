@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tutormgmt.common.error.ApiException;
+import com.tutormgmt.lesson.LessonRepository;
 import com.tutormgmt.support.AbstractPostgresIT;
 import com.tutormgmt.user.User;
 import com.tutormgmt.user.UserRepository;
@@ -24,12 +25,15 @@ class StudentServiceIT extends AbstractPostgresIT {
     StudentRepository studentRepository;
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    LessonRepository lessonRepository;
 
     private UUID userId;
     private UUID otherUserId;
 
     @BeforeEach
     void setUp() {
+        lessonRepository.deleteAll();
         studentRepository.deleteAll();
         userRepository.deleteAll();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "a@tutor.ee", "A", "Tutor")).getId();

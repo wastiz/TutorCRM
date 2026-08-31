@@ -25,7 +25,9 @@ plus phase-by-phase progress.
 | Import package name | §17 shows `student/import/` | `import` is a Java reserved word — the package is `student/importer/`. |
 | `POST /api/students/import/create` | §49 defines it separately | Implemented; delegates to the same create path as `POST /api/students` (validation + duplicate detection included). |
 | Duplicate detection response | §26 shows a UI choice, no wire format given | `POST /api/students` returns **409 `POSSIBLE_DUPLICATE`** with `details.duplicates: [StudentSummary]`; `ignoreDuplicates:true` in the body overrides. A `POST /api/students/duplicates` lookup backs the pre-submit check. |
-| Student archival | §48 has `DELETE`; §39/§60 say "archive" | `DELETE` hard-deletes; separate `POST /api/students/{id}/archive` sets status `FINISHED` + `endDate`. |
+| Student archival | §48 has `DELETE`; §39/§60 say "archive" | `DELETE` hard-deletes **only when the student has no lessons** (else 409 `STUDENT_HAS_LESSONS`); separate `POST /api/students/{id}/archive` sets status `FINISHED` + `endDate`. |
+| Lesson list filtering | §50 lists `GET /api/lessons` with no filter spec | Optional `studentId`, `status`, `from`, `to` (ISO date-time) query params; filtered in the service (per-tutor lesson volume is small). |
+| Recurring lessons | §36 describes the flow, no endpoint | `POST /api/lessons/{id}/repeat` `{occurrences, intervalWeeks?}` clones the source lesson weekly; each copy is its own record (own calendar event later). |
 | Cross-site cookie | Frontend + backend as separate Railway services breaks a `SameSite=Lax` cookie | Prod deploys the SPA behind nginx that proxies `/api`, `/oauth2`, `/login` to the backend → same origin. `JWT_COOKIE_SAMESITE` / `JWT_COOKIE_SECURE` are env-configurable for a split-domain setup (`None` + `Secure`). |
 | CSRF | Cookie auth normally needs CSRF protection | CSRF disabled; mitigated by `SameSite` cookie + stateless JWT + explicit CORS allow-list. Acceptable for a single-user MVP; revisit if multi-tenant. |
 
@@ -44,7 +46,7 @@ user can access — `drive.file` would only see app-created files).
 - [x] **Phase 1 — Project setup**: Gradle Spring Boot 3.5.9 skeleton, Angular 22 SPA shell, Liquibase baseline, Dockerfiles, `docker-compose` (Postgres), CORS/error-handling infra, Testcontainers wiring.
 - [x] **Phase 2 — Authentication**: Google OAuth2 login, `User` + `Authentication` slices, encrypted token storage, JWT cookie session, `/api/auth/me` + `/api/auth/logout`, Angular auth guard/interceptors/login screen.
 - [x] **Phase 3 — Student**: `student` + `student/schedule` + `student/importer` slices; CRUD API, per-user sequential `studentNumber`, `StudentSchedule` rows, deterministic `TabStudentImportParser` (17 unit tests incl. both real examples), `/import/parse` + `/import/create`, duplicate detection; Angular students list (search/filter), shared reactive form, create screen with Manual / Import-from-message tabs + warnings + preview, edit, detail, duplicate + confirm dialogs. Backend 38 tests green.
-- [ ] Phase 4 — Lessons
+- [x] **Phase 4 — Lessons**: `lesson` slice — `Lesson` entity (frozen per-lesson `price`, `CalendarSyncStatus`), `LessonStatus`, CRUD API, `complete`/`cancel`/`no-show`, `POST /{id}/repeat` weekly generation (CLAUDE.md §36), `GET /student/{id}/overview` (upcoming/past/this-month/earnings), `LessonQueryService` feeds `nextLessonAt` into the students list and blocks deleting a student with lessons. Liquibase 0003. Angular: lesson create/edit dialog (with inline "repeat"), FullCalendar calendar page (month/week/day, click-to-create, status colours), student detail lessons section. `sync-calendar` endpoint deferred to Phase 5. Backend 46 tests green.
 - [ ] Phase 5 — Google Calendar
 - [ ] Phase 6 — Reports
 - [ ] Phase 7 — Google Sheets export

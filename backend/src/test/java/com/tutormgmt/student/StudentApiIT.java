@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tutormgmt.lesson.LessonRepository;
 import com.tutormgmt.security.AppPrincipal;
 import com.tutormgmt.support.AbstractPostgresIT;
 import com.tutormgmt.user.User;
@@ -34,11 +35,14 @@ class StudentApiIT extends AbstractPostgresIT {
     UserRepository userRepository;
     @Autowired
     StudentRepository studentRepository;
+    @Autowired
+    LessonRepository lessonRepository;
 
     private UUID userId;
 
     @BeforeEach
     void setUp() {
+        lessonRepository.deleteAll();
         studentRepository.deleteAll();
         userRepository.deleteAll();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "tutor@x.ee", "T", "T")).getId();

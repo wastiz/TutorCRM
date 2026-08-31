@@ -45,7 +45,7 @@ export const routes: Routes = [
       {
         path: 'calendar',
         loadComponent: () =>
-          import('./features/calendar/calendar.placeholder').then((m) => m.CalendarPlaceholder),
+          import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
       },
       {
         path: 'reports',

@@ -1,8 +1,10 @@
 package com.tutormgmt.student;
 
 import com.tutormgmt.common.error.ApiException;
+import com.tutormgmt.lesson.LessonQueryService;
 import com.tutormgmt.student.schedule.StudentSchedule;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,14 +25,21 @@ public class StudentService {
 
     private final StudentRepository repository;
     private final StudentMapper mapper;
+    private final LessonQueryService lessonQueryService;
 
     @Transactional(readOnly = true)
     public List<StudentSummaryDto> list(UUID userId, String search, StudentStatus status) {
         String needle = search == null ? null : search.trim().toLowerCase(Locale.ROOT);
+        Map<UUID, OffsetDateTime> nextLessons = lessonQueryService.nextPlannedLessonStartByStudent(userId);
         return repository.findByUserIdOrderByStudentNumberAsc(userId).stream()
                 .filter(s -> status == null || s.getStatus() == status)
                 .filter(s -> needle == null || needle.isBlank() || matches(s, needle))
-                .map(mapper::toSummary)
+                .map(s -> {
+                    StudentSummaryDto dto = mapper.toSummary(s);
+                    return new StudentSummaryDto(dto.id(), dto.studentNumber(), dto.fullName(),
+                            dto.subject(), dto.grade(), dto.lessonFormat(), dto.lessonPrice(),
+                            dto.status(), dto.email(), dto.phone(), nextLessons.get(s.getId()));
+                })
                 .toList();
     }
 
@@ -65,6 +74,10 @@ public class StudentService {
     @Transactional
     public void delete(UUID userId, UUID id) {
         Student student = require(userId, id);
+        if (lessonQueryService.studentHasLessons(userId, id)) {
+            throw ApiException.conflict("STUDENT_HAS_LESSONS",
+                    "This student has lessons. Archive the student instead of deleting.");
+        }
         repository.delete(student);
         log.info("Deleted student {} for user {}", id, userId);
     }

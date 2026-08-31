@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0003-01-create-lesson
+      author: tutor-management
+      changes:
+        - createTable:
+            tableName: lesson
+            columns:
+              - column: { name: id, type: uuid, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: student_id, type: uuid, constraints: { nullable: false } }
+              - column: { name: start_time, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: end_time, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: price, type: "numeric(12,2)", constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: notes, type: varchar(4000) }
+              - column: { name: google_calendar_id, type: varchar(255) }
+              - column: { name: google_calendar_event_id, type: varchar(255) }
+              - column: { name: calendar_sync_status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: updated_at, type: timestamptz, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: lesson
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_lesson_user
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: lesson
+            baseColumnNames: student_id
+            referencedTableName: student
+            referencedColumnNames: id
+            constraintName: fk_lesson_student
+            onDelete: RESTRICT
+        - createIndex:
+            tableName: lesson
+            indexName: ix_lesson_user_start
+            columns:
+              - column: { name: user_id }
+              - column: { name: start_time }
+        - createIndex:
+            tableName: lesson
+            indexName: ix_lesson_student
+            columns:
+              - column: { name: student_id }
