@@ -23,3 +23,21 @@ export interface GoogleCalendarSummary {
   primary: boolean;
   writable: boolean;
 }
+
+export interface SpreadsheetSummary {
+  id: string;
+  name: string;
+  url: string | null;
+}
+
+export interface SpreadsheetWorksheet {
+  title: string;
+  sheetId: number | null;
+}
+
+export interface SpreadsheetDetail {
+  id: string;
+  name: string;
+  url: string | null;
+  worksheets: SpreadsheetWorksheet[];
+}

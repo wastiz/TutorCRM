@@ -1,9 +1,11 @@
 package com.tutormgmt.report;
 
+import com.tutormgmt.common.error.ApiException;
 import com.tutormgmt.lesson.Lesson;
 import com.tutormgmt.lesson.LessonRepository;
 import com.tutormgmt.lesson.LessonStatus;
 import com.tutormgmt.report.MonthlyReportDto.StudentReportRowDto;
+import com.tutormgmt.report.export.MonthlyReportSheetExporter;
 import com.tutormgmt.student.Student;
 import com.tutormgmt.student.StudentRepository;
 import java.math.BigDecimal;
@@ -32,6 +34,30 @@ public class ReportService {
 
     private final LessonRepository lessonRepository;
     private final StudentRepository studentRepository;
+    private final ReportRepository reportRepository;
+    private final MonthlyReportSheetExporter sheetExporter;
+
+    @Transactional
+    public ReportExportResultDto export(UUID userId, YearMonth month, boolean overwrite) {
+        MonthlyReportDto report = generate(userId, month);
+        if (!report.exportable()) {
+            throw new ApiException(org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,
+                    "REPORT_NOT_EXPORTABLE", "Resolve the report errors before exporting",
+                    java.util.Map.of("errors", report.errors()));
+        }
+
+        MonthlyReportSheetExporter.ExportOutcome outcome = sheetExporter.export(userId, report, overwrite);
+
+        Report snapshot = Report.snapshot(userId, month, report.totalLessons(), report.totalAmount());
+        snapshot.setSpreadsheetId(outcome.spreadsheetId());
+        snapshot.setWorksheetTitle(outcome.worksheetTitle());
+        reportRepository.save(snapshot);
+
+        log.info("Exported report {} for user {} to spreadsheet {} / {}",
+                report.title(), userId, outcome.spreadsheetId(), outcome.worksheetTitle());
+        return new ReportExportResultDto(outcome.spreadsheetId(), outcome.spreadsheetUrl(),
+                outcome.worksheetTitle(), outcome.updatedExisting());
+    }
 
     @Transactional(readOnly = true)
     public MonthlyReportDto generate(UUID userId, YearMonth month) {
