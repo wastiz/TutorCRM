@@ -1,0 +1,24 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(560px, 80vw);
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.warnings {
+  display: flex;
+  gap: 8px;
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.warnings ul {
+  margin: 0;
+  padding-left: 18px;
+}

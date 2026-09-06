@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0006-01-student-parent-isikukood-and-telegram
+      author: tutor-management
+      changes:
+        - addColumn:
+            tableName: student
+            columns:
+              - column: { name: parent_isikukood, type: varchar(32) }
+              - column: { name: telegram, type: varchar(64) }

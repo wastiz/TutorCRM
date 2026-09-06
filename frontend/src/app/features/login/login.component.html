@@ -1,0 +1,25 @@
+<div class="login-wrap">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>Tutor Management System</mat-card-title>
+      <mat-card-subtitle>Sign in to continue</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="muted">
+        Sign in with the Google account that has access to your calendar and reporting spreadsheet.
+      </p>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-flat-button color="primary" (click)="login()">
+        <mat-icon>login</mat-icon>
+        Sign in with Google
+      </button>
+      @if (!production) {
+        <button mat-stroked-button (click)="devLogin()">
+          <mat-icon>science</mat-icon>
+          Dev sign-in (seeded data)
+        </button>
+      }
+    </mat-card-actions>
+  </mat-card>
+</div>

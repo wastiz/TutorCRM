@@ -1,0 +1,50 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav #drawer class="shell-nav" [mode]="handset() ? 'over' : 'side'" [opened]="!handset()">
+    <div class="brand">
+      <mat-icon>school</mat-icon>
+      <span>Tutor MS</span>
+    </div>
+    <mat-nav-list>
+      @for (item of nav; track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+          (click)="closeOnHandset(drawer)"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="shell-toolbar">
+      @if (handset()) {
+        <button mat-icon-button aria-label="Menu" (click)="drawer.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span class="toolbar-brand">Tutor MS</span>
+      }
+      <span class="spacer"></span>
+      <button mat-button [matMenuTriggerFor]="menu">
+        <mat-icon>account_circle</mat-icon>
+        <span class="user-name">{{ displayName() }}</span>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item routerLink="/settings">
+          <mat-icon>settings</mat-icon>
+          <span>Settings</span>
+        </button>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

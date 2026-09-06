@@ -4,11 +4,13 @@ import com.tutormgmt.student.LessonFormat;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.util.List;
+import lombok.Builder;
 
 /**
  * Structured result of parsing a raw message. Field names mirror
  * {@link com.tutormgmt.student.StudentRequest} so the SPA can drop it straight into the edit form.
  */
+@Builder
 public record ImportedStudentDto(
         String firstName,
         String lastName,
@@ -28,6 +30,8 @@ public record ImportedStudentDto(
         String parentPhone,
         String parentEmail,
         String parentSecondaryPhone,
+        String parentIsikukood,
+        String telegram,
         List<DayOfWeek> preferredDays,
         String preferredTimeFrom,
         String preferredTimeTo,

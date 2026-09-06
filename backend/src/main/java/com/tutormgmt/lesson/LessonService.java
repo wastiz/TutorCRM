@@ -51,7 +51,7 @@ public class LessonService {
         Lesson lesson = Lesson.create(userId, student.getId());
         lesson.setStartTime(request.startTime());
         lesson.setEndTime(request.endTime());
-        lesson.setPrice(resolvePrice(request.price(), student));
+        lesson.setPrice(resolvePrice(request.price(), student, request.startTime(), request.endTime()));
         lesson.setStatus(request.status() == null ? LessonStatus.PLANNED : request.status());
         lesson.setNotes(trimToNull(request.notes()));
         Lesson saved = repository.save(lesson);
@@ -67,11 +67,18 @@ public class LessonService {
         Student student = requireStudent(userId, request.studentId());
         validateTimes(request.startTime(), request.endTime());
 
+        boolean repriced = !lesson.getStudentId().equals(student.getId())
+                || LessonPricing.minutesBetween(lesson.getStartTime(), lesson.getEndTime())
+                        != LessonPricing.minutesBetween(request.startTime(), request.endTime());
+
         lesson.setStudentId(student.getId());
         lesson.setStartTime(request.startTime());
         lesson.setEndTime(request.endTime());
         if (request.price() != null) {
             lesson.setPrice(request.price());
+        } else if (repriced) {
+            // duration (or student) changed and no price was given — reprice from the current rate
+            lesson.setPrice(resolvePrice(null, student, request.startTime(), request.endTime()));
         }
         if (request.status() != null) {
             lesson.setStatus(request.status());
@@ -105,6 +112,45 @@ public class LessonService {
         Lesson lesson = require(userId, id);
         pushToCalendar(lesson);
         return withStudentNames(List.of(repository.save(lesson))).get(0);
+    }
+
+    /**
+     * Re-push every lesson of one student to Google Calendar (owner request, 2026-09-05).
+     *
+     * <p>Covers lessons from the start of today onwards plus anything left in {@code FAILED},
+     * which is what a tutor means by "this student is out of sync". Cancelled and no-show
+     * lessons are taken out of the calendar rather than pushed.
+     */
+    @Transactional
+    public CalendarSyncSummaryDto syncStudentCalendar(UUID userId, UUID studentId) {
+        requireStudent(userId, studentId);
+        if (!calendarGateway.enabledFor(userId)) {
+            return new CalendarSyncSummaryDto(false, 0, 0, 0, 0, List.of());
+        }
+        OffsetDateTime todayStart = OffsetDateTime.now().truncatedTo(ChronoUnit.DAYS);
+        List<Lesson> lessons = repository.findByUserIdAndStudentIdOrderByStartTimeDesc(userId, studentId)
+                .stream()
+                .filter(l -> !l.getStartTime().isBefore(todayStart)
+                        || l.getCalendarSyncStatus() == CalendarSyncStatus.FAILED)
+                .toList();
+
+        int synced = 0;
+        int removed = 0;
+        List<String> problems = new ArrayList<>();
+        for (Lesson lesson : lessons) {
+            pushToCalendar(lesson);
+            switch (lesson.getCalendarSyncStatus()) {
+                case SYNCED -> synced++;
+                case REMOVED -> removed++;
+                case FAILED -> problems.add("Lesson on " + lesson.getStartTime().toLocalDate()
+                        + " could not be synced");
+                default -> { }
+            }
+        }
+        repository.saveAll(lessons);
+        log.info("Synced student {} with Google Calendar: {} pushed, {} removed, {} failed",
+                studentId, synced, removed, problems.size());
+        return new CalendarSyncSummaryDto(true, lessons.size(), synced, removed, problems.size(), problems);
     }
 
     @Transactional
@@ -164,6 +210,10 @@ public class LessonService {
 
     /** Best-effort mirror to Google Calendar. Never throws — a failure only marks the lesson FAILED. */
     private void pushToCalendar(Lesson lesson) {
+        if (lesson.getStatus() == LessonStatus.CANCELLED || lesson.getStatus() == LessonStatus.NO_SHOW) {
+            removeFromCalendar(lesson);
+            return;
+        }
         if (!calendarGateway.enabledFor(lesson.getUserId())) {
             lesson.setCalendarSyncStatus(CalendarSyncStatus.DISABLED);
             return;
@@ -171,7 +221,7 @@ public class LessonService {
         try {
             LessonCalendarGateway.LessonSyncCommand cmd = new LessonCalendarGateway.LessonSyncCommand(
                     lesson.getId(), studentName(lesson.getStudentId()),
-                    lesson.getStartTime(), lesson.getEndTime(), lesson.getPrice(),
+                    lesson.getStartTime(), lesson.getEndTime(),
                     lesson.getStatus(), lesson.getNotes(),
                     lesson.getGoogleCalendarId(), lesson.getGoogleCalendarEventId());
             calendarGateway.sync(lesson.getUserId(), cmd).ifPresent(link -> {
@@ -183,6 +233,27 @@ public class LessonService {
             log.warn("Calendar sync failed for lesson {}: {}", lesson.getId(), e.getMessage());
             lesson.setCalendarSyncStatus(CalendarSyncStatus.FAILED);
         }
+    }
+
+    /**
+     * A lesson that did not happen is taken out of the calendar so the slot reads as free
+     * (owner decision, 2026-09-05). The lesson itself stays in the database for the statistics.
+     */
+    private void removeFromCalendar(Lesson lesson) {
+        if (lesson.getGoogleCalendarEventId() != null) {
+            try {
+                calendarGateway.remove(lesson.getUserId(),
+                        lesson.getGoogleCalendarId(), lesson.getGoogleCalendarEventId());
+                log.info("Removed calendar event for lesson {} ({})", lesson.getId(), lesson.getStatus());
+            } catch (RuntimeException e) {
+                log.warn("Could not remove calendar event for lesson {}: {}", lesson.getId(), e.getMessage());
+                lesson.setCalendarSyncStatus(CalendarSyncStatus.FAILED);
+                return;
+            }
+        }
+        lesson.setGoogleCalendarId(null);
+        lesson.setGoogleCalendarEventId(null);
+        lesson.setCalendarSyncStatus(CalendarSyncStatus.REMOVED);
     }
 
     private String studentName(UUID studentId) {
@@ -229,15 +300,18 @@ public class LessonService {
         }
     }
 
-    private static BigDecimal resolvePrice(BigDecimal requested, Student student) {
+    /** Explicit price wins; otherwise the student's rate scaled by the lesson length. */
+    private static BigDecimal resolvePrice(BigDecimal requested, Student student,
+                                           OffsetDateTime start, OffsetDateTime end) {
         if (requested != null) {
             return requested;
         }
-        if (student.getLessonPrice() != null) {
-            return student.getLessonPrice();
+        BigDecimal computed = LessonPricing.priceFor(student.getLessonPrice(), start, end);
+        if (computed != null) {
+            return computed;
         }
         throw ApiException.badRequest("LESSON_PRICE_REQUIRED",
-                "No price given and the student has no default lesson price");
+                "No price given and the student has no lesson rate");
     }
 
     private static String trimToNull(String v) {

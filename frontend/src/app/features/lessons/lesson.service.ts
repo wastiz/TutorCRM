@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  CalendarSyncSummary,
   GoogleImportPreview,
   GoogleImportRequest,
   GoogleImportResult,
@@ -18,12 +19,14 @@ export class LessonService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBaseUrl}/api/lessons`;
 
-  list(opts: {
-    studentId?: string;
-    status?: LessonStatus;
-    from?: string;
-    to?: string;
-  } = {}): Observable<Lesson[]> {
+  list(
+    opts: {
+      studentId?: string;
+      status?: LessonStatus;
+      from?: string;
+      to?: string;
+    } = {},
+  ): Observable<Lesson[]> {
     let params = new HttpParams();
     for (const [k, v] of Object.entries(opts)) {
       if (v) params = params.set(k, v);
@@ -63,12 +66,25 @@ export class LessonService {
     return this.http.post<Lesson>(`${this.base}/${id}/no-show`, {});
   }
 
+  /** Back to PLANNED — undoes a completion / cancellation and restores the calendar event. */
+  replan(id: string): Observable<Lesson> {
+    return this.http.post<Lesson>(`${this.base}/${id}/replan`, {});
+  }
+
   repeat(id: string, request: RepeatLessonRequest): Observable<Lesson[]> {
     return this.http.post<Lesson[]>(`${this.base}/${id}/repeat`, request);
   }
 
   syncCalendar(id: string): Observable<Lesson> {
     return this.http.post<Lesson>(`${this.base}/${id}/sync-calendar`, {});
+  }
+
+  /** Re-push every upcoming (or previously failed) lesson of one student. */
+  syncStudentCalendar(studentId: string): Observable<CalendarSyncSummary> {
+    return this.http.post<CalendarSyncSummary>(
+      `${this.base}/student/${studentId}/sync-calendar`,
+      {},
+    );
   }
 
   // --- Google Calendar -> app import ---

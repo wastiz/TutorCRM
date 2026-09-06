@@ -1,5 +1,15 @@
 export type LessonStatus = 'PLANNED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
-export type CalendarSyncStatus = 'PENDING' | 'SYNCED' | 'FAILED' | 'DISABLED';
+export type CalendarSyncStatus = 'PENDING' | 'SYNCED' | 'FAILED' | 'DISABLED' | 'REMOVED';
+
+/** Result of re-syncing one student's lessons with Google Calendar. */
+export interface CalendarSyncSummary {
+  enabled: boolean;
+  considered: number;
+  synced: number;
+  removed: number;
+  failed: number;
+  problems: string[];
+}
 
 export interface Lesson {
   id: string;

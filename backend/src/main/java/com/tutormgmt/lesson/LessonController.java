@@ -83,6 +83,19 @@ public class LessonController {
         return service.changeStatus(principal.userId(), id, LessonStatus.NO_SHOW);
     }
 
+    /** Undo a completion / cancellation — the calendar event is re-created if it was removed. */
+    @PostMapping("/{id}/replan")
+    public LessonDto replan(@AuthenticationPrincipal AppPrincipal principal, @PathVariable UUID id) {
+        return service.changeStatus(principal.userId(), id, LessonStatus.PLANNED);
+    }
+
+    /** Re-sync every (upcoming or previously failed) lesson of one student. */
+    @PostMapping("/student/{studentId}/sync-calendar")
+    public CalendarSyncSummaryDto syncStudentCalendar(@AuthenticationPrincipal AppPrincipal principal,
+                                                      @PathVariable UUID studentId) {
+        return service.syncStudentCalendar(principal.userId(), studentId);
+    }
+
     @PostMapping("/{id}/repeat")
     public List<LessonDto> repeat(@AuthenticationPrincipal AppPrincipal principal,
                                   @PathVariable UUID id,

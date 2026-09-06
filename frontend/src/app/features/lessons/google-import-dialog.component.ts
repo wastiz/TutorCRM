@@ -40,90 +40,8 @@ interface Row {
     MatIconModule,
     MatTooltipModule,
   ],
-  template: `
-    <h2 mat-dialog-title>Sync from Google Calendar</h2>
-    <mat-dialog-content>
-      @if (!data.preview.enabled) {
-        <p class="muted">Connect Google and choose a calendar in Settings first.</p>
-      } @else {
-        <p class="muted">
-          {{ data.preview.from | date: 'd MMM' }} – {{ data.preview.to | date: 'd MMM y' }} ·
-          {{ data.preview.alreadyLinked }} event(s) already linked
-        </p>
-
-        @if (rows().length) {
-          <h3>New events → lessons</h3>
-          <table class="rows">
-            <tr>
-              <th></th><th>Event</th><th>When</th><th>Student</th><th>€</th>
-            </tr>
-            @for (r of rows(); track r.eventId) {
-              <tr [class.off]="!r.include">
-                <td><mat-checkbox [(ngModel)]="r.include"></mat-checkbox></td>
-                <td class="summary">{{ r.summary || '(no title)' }}</td>
-                <td class="when">
-                  {{ r.start | date: 'EEE d MMM, HH:mm' }}–{{ r.end | date: 'HH:mm' }}
-                </td>
-                <td>
-                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                    <mat-select [(ngModel)]="r.studentId" placeholder="pick student">
-                      @for (s of students(); track s.id) {
-                        <mat-option [value]="s.id">#{{ s.studentNumber }} {{ s.fullName }}</mat-option>
-                      }
-                    </mat-select>
-                  </mat-form-field>
-                  @if (r.guessed) { <mat-icon class="guess" matTooltip="matched from the title">auto_awesome</mat-icon> }
-                </td>
-                <td>
-                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="price">
-                    <input matInput type="number" step="0.01" [(ngModel)]="r.price" />
-                  </mat-form-field>
-                </td>
-              </tr>
-            }
-          </table>
-        } @else {
-          <p class="muted">No new events to import in this range.</p>
-        }
-
-        @if (data.preview.movedLessons.length) {
-          <h3>Moved in Google</h3>
-          <mat-checkbox [(ngModel)]="updateMoved">
-            Update {{ data.preview.movedLessons.length }} lesson(s) whose time changed in Google Calendar
-          </mat-checkbox>
-          <ul class="moved">
-            @for (m of data.preview.movedLessons; track m.eventId) {
-              <li>
-                {{ m.studentName }}:
-                {{ m.currentStart | date: 'd MMM HH:mm' }} → <strong>{{ m.newStart | date: 'd MMM HH:mm' }}</strong>
-              </li>
-            }
-          </ul>
-        }
-      }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-flat-button color="primary" [disabled]="!canImport() || busy()" (click)="run()">
-        Import {{ selectedCount() }}
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [
-    `
-      mat-dialog-content { min-width: 640px; }
-      h3 { margin: 16px 0 6px; }
-      table.rows { width: 100%; border-collapse: collapse; }
-      table.rows th { text-align: left; font-size: 12px; color: rgba(0,0,0,0.5); padding: 4px; }
-      table.rows td { padding: 4px; vertical-align: middle; }
-      tr.off { opacity: 0.45; }
-      .summary { max-width: 180px; }
-      .when { white-space: nowrap; font-size: 12px; }
-      .price { width: 80px; }
-      .guess { color: #7b1fa2; font-size: 18px; vertical-align: middle; }
-      ul.moved { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
-    `,
-  ],
+  templateUrl: './google-import-dialog.component.html',
+  styleUrl: './google-import-dialog.component.scss',
 })
 export class GoogleImportDialogComponent {
   private readonly lessons = inject(LessonService);
@@ -152,7 +70,8 @@ export class GoogleImportDialogComponent {
     () => this.rows().filter((r) => r.include && r.studentId).length,
   );
   readonly canImport = computed(
-    () => this.selectedCount() > 0 || (this.updateMoved && this.data.preview.movedLessons.length > 0),
+    () =>
+      this.selectedCount() > 0 || (this.updateMoved && this.data.preview.movedLessons.length > 0),
   );
 
   constructor() {

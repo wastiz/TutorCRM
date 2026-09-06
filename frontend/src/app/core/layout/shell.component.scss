@@ -1,0 +1,37 @@
+.shell {
+  height: 100vh;
+}
+.shell-nav {
+  width: 220px;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+.toolbar-brand {
+  font-size: 16px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+/* on a phone the account name would push the menu off-screen */
+@media (max-width: 599px) {
+  .user-name {
+    display: none;
+  }
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px;
+}
+.shell-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.spacer {
+  flex: 1 1 auto;
+}
+.active-link {
+  background: rgba(63, 81, 181, 0.12);
+}

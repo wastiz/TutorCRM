@@ -1,6 +1,5 @@
 package com.tutormgmt.lesson;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +27,6 @@ public interface LessonCalendarGateway {
             String studentName,
             OffsetDateTime start,
             OffsetDateTime end,
-            BigDecimal price,
             LessonStatus status,
             String notes,
             String existingCalendarId,

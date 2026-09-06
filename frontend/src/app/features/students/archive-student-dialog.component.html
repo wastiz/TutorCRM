@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>Archive {{ data.studentName }}</h2>
+
+<mat-dialog-content>
+  <p class="muted">
+    The student stays in the database with every past lesson, but stops showing up as active.
+  </p>
+  <mat-form-field class="wide">
+    <mat-label>Why did they stop?</mat-label>
+    <textarea
+      matInput
+      rows="3"
+      [formControl]="reason"
+      placeholder="Moved away, exams over, price, schedule…"
+    ></textarea>
+    <mat-hint>Optional — collected on the statistics page</mat-hint>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" [mat-dialog-close]="{ reason: reason.value }">
+    Archive
+  </button>
+</mat-dialog-actions>

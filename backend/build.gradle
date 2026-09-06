@@ -32,6 +32,7 @@ ext {
     googleCalendarVersion = 'v3-rev20260708-2.0.0'
     googleSheetsVersion = 'v4-rev20260610-2.0.0'
     googleDriveVersion = 'v3-rev20260823-2.0.0'
+    googleGmailVersion = 'v1-rev20260525-2.0.0'
     googleAuthLibVersion = '1.51.0'
 }
 
@@ -64,6 +65,7 @@ dependencies {
     implementation "com.google.apis:google-api-services-calendar:${googleCalendarVersion}"
     implementation "com.google.apis:google-api-services-sheets:${googleSheetsVersion}"
     implementation "com.google.apis:google-api-services-drive:${googleDriveVersion}"
+    implementation "com.google.apis:google-api-services-gmail:${googleGmailVersion}"
     implementation "com.google.auth:google-auth-library-oauth2-http:${googleAuthLibVersion}"
 
     // --- Lombok ---

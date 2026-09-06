@@ -105,3 +105,67 @@ Covers Definition of Done items 2–12. Items 1/7/13/14 (Google login, Calendar 
 pick Sheet, export) need real Google OAuth credentials; the integration layer is built and
 returns friendly errors without them. Item 15 (Railway) needs a Railway account — Dockerfiles +
 `railway.json` + `docs/RAILWAY.md` are ready.
+
+## Post-MVP: smarter student import (owner request, 2026-09-05)
+
+Task: recognize isikukood, phone, first/last name, e-mail and the remaining fields out of free
+text, tolerating missing separators.
+
+| Area | Decision |
+|------|----------|
+| Recognition vs position | Positions now drive only the fields that cannot be told apart by content (school, subject, goal, grade, lessons per week). Identity fields are recognized by shape anywhere in the message: `ContactScanner` (e-mail / isikukood / phone) + `ImportValues` (name, days, time range, lesson format). |
+| **Spec correction** | `CLAUDE.md` §58 calls the last two fields "Parent phone / Parent secondary phone". They are not phones: `51109180029` and `47808060232` are valid isikukoods (checksum verified), and the first decodes to 2011‑09‑18 — exactly the age 14 stated in the same message, i.e. the **student's own** code; the second (1978‑08‑06) is the parent's. Estonian phone numbers are 7–8 digits. The parser now maps column 15 → `isikukood` and column 16 → `parentIsikukood`; `parentPhone` stays free for a real phone number. |
+| New student fields | `parentIsikukood` and `telegram` (Liquibase `0006`). Telegram is filled by the parser here; the clickable link is part of the Telegram task. |
+| Glued values | `ljulap@gmail.com5350 6894` (the e-mail regex stops the TLD at the first non-letter), `5350689451109180029` (an 11-digit isikukood is peeled off either end when the remainder is a plausible phone), `AnnaIvanova` (camel-case name split). A name glued to an e-mail with no case boundary (`Tsarenkovljulap@…`) stays ambiguous and is left to the Preview step. |
+| Two personal codes in one message | The younger birth date is the student; an explicitly stated age wins over that guess (±1 year). |
+| Student vs parent side | Everything from the parent-name column (or the first "мама / родитель / parent…" word in free text) onwards is treated as the parent's contact data. |
+| Free text | `FreeTextStudentImportParser` handles prose, one-value-per-line and separator-less pastes; whatever it cannot classify becomes `goal`, so nothing is lost (§24). `SmartStudentImportParser` (`@Primary`) routes by shape and, for a half-broken paste, keeps whichever strategy recognized more identity fields. Still deterministic — no LLM (§25). |
+| Age from isikukood | When the message has no age, it is derived from the personal code and reported as a warning in the Preview. |
+| `StudentRequest` builder | Adding fields kept breaking the positional record constructor in tests; `StudentRequest` and `ImportedStudentDto` now carry `@Builder` and the tests use it. |
+
+New tests: `IsikukoodTest`, `FreeTextStudentImportParserTest`, `SmartStudentImportParserTest`,
+plus isikukood/glued-value cases in `TabStudentImportParserTest` — 80 backend tests green.
+
+## Post-MVP batch (owner request, 2026-09-05)
+
+Ten follow-up tasks. Decisions confirmed with the owner up front: e-mail goes out through the
+**Gmail API on the existing Google OAuth** and is **sent manually only** (no automatic triggers);
+a lesson that did not happen is **deleted from Google Calendar** and hidden in the app calendar;
+the reason a student left is **free text**.
+
+| # | Task | Decision |
+|---|------|----------|
+| 2 | Required student fields | Only `firstName`, `lastName`, `email` (`@NotBlank @Email`). Applies to update as well as create — a student without an e-mail cannot be saved from the form any more. An unfinished schedule row no longer blocks the form; it is dropped on submit. |
+| 3 | One rate, several lengths | `Student.lessonPrice` is re-read as **the rate for a standard 60-minute lesson** (no rename, no migration); `LessonPricing` computes `rate × duration/60` rounded to cents. Update reprices only when the duration or the student changed — editing notes never rewrites a historical price (§10.4). The dialog offers 1 / 1.5 / 2 h (plus the lesson's own length if it differs) and fills the price in read-only, with a "Custom price" override that is switched on automatically for an existing hand-priced lesson. |
+| 4 | Dashboard for today | `DashboardDto.todaysLessonList`; marking a lesson `CANCELLED`/`NO_SHOW` deletes its calendar event, clears the event id and sets the new `CalendarSyncStatus.REMOVED` — the lesson row survives for the report and the statistics. `POST /api/lessons/{id}/replan` undoes it and re-creates the event. The app calendar hides such lessons behind a "Show cancelled" toggle. |
+| 5 | E-mail templates | Stored per tutor in `email_template` (Liquibase 0007) and edited in Settings, so no deploy is needed to change wording; three starter templates are seeded on first use. `{{placeholders}}` are rendered by the pure `EmailTemplateRenderer`; an unresolved one is left visible and reported instead of being sent blank. `EmailSender` port + `GmailEmailSender` adapter; the MIME message is built by hand (`MimeMessages`) to avoid an SMTP stack — UTF-8 body, RFC 2047 subject, header-injection guard. **New scope `gmail.send` — Google must be reconnected once.** |
+| 6 | Calendar sync bugs | Three real defects: (a) `timeZone` was set from `OffsetDateTime.getOffset().getId()` — `"Z"` / `"+03:00"` are not IANA zone ids and Google rejects them; the field is now omitted since the RFC 3339 value already carries the offset. (b) `updateEvent` treated **any** `IOException` from the pre-fetch as "event is gone" and created a duplicate; only 404/410 re-create now. (c) updating an event replaced all private extended properties; only our two keys are written. Plus `POST /api/lessons/student/{id}/sync-calendar` for one student, and the event now shows the **duration** instead of the price (`price` was removed from `LessonSyncCommand` altogether — a shared calendar should not leak earnings). |
+| 7 | Telegram | `Student.telegram` (Liquibase 0006), normalized to a bare username whatever the tutor pastes (`@name`, `t.me/name`, full URL); the import parser recognizes handles in free text. Clickable in the list and on the student page. |
+| 8 | Responsive | `BreakpointObserver` switches the shell drawer to `over` on handsets; tables scroll inside `.scroll-x` and drop secondary columns by CSS; the calendar starts in day view on a phone; dialogs and forms collapse to one column. |
+| 9 | File split | Every component now uses `templateUrl` / `styleUrl` — no inline templates or styles are left in the codebase. |
+| 10 | Statistics | New `statistics` slice, `GET /api/statistics`: student counts by status, lesson counts by status with a "fell through" rate, all-time earnings, a 12-month breakdown, and the free-text leave reasons. `Student.leaveReason` (Liquibase 0008) is asked for in a dialog when archiving. |
+
+Backend 114 tests green; frontend builds and its Vitest suite passes.
+
+**Not verified here:** everything that needs real Google credentials (Gmail send, live calendar
+writes) and on-device checks of the responsive layout.
+
+## Dev seed data (owner request, 2026-09-06)
+
+Goal: after every update, open the app and click through real-looking data without a Google account.
+
+| Area | Decision |
+|------|----------|
+| Where it lives | New `dev/` package (infrastructure, next to `config/` and `security/` per CLAUDE.md §9): `DevProperties`, `DevDataSeeder`, `DevDataRunner`, `DevAuthController`, `DevSecurityConfig`. |
+| How it is gated | Every bean carries `@Profile("local")`, so in a deployed environment the seeder and its routes are **not registered at all** — `DevEndpointsDisabledIT` asserts exactly that under the default profile. No environment variable can switch them on. |
+| Ownership of the data | Everything hangs off one demo tutor identified by the fake Google subject `dev-local-seed`. A reseed only ever deletes that tutor's rows, so a database that also holds a real Google account is safe. |
+| Idempotency | Startup seeding fills an **empty** demo account only, so a restart after a code change keeps whatever you clicked together. `app.dev.reset-on-startup=true` (or `POST /dev/seed?reset=true`) wipes and regenerates with fresh dates. |
+| Signing in | `GET /dev/login` issues the normal session cookie for the demo tutor and redirects to the SPA callback — the same cookie the Google flow issues, so nothing else in the app behaves differently. The login screen shows a "Dev sign-in" button when `environment.production` is false, and `proxy.conf.json` forwards `/dev` so the cookie lands on the `ng serve` origin. |
+| Cookie duplication | `SessionCookies` was extracted from `OAuth2LoginSuccessHandler`; the Google login, the logout endpoint and the dev sign-in now share one definition of the session cookie. |
+| What the data covers | 8 students (5 active / 1 paused / 2 archived **with free-text leave reasons**), one deliberately holding only the three required fields; valid isikukoods for students and parents, telegram handles, parent contacts, weekly schedules; ~107 lessons over 18 weeks back and 3 weeks ahead in every status, of 60 / 90 / 120 minutes so prices exercise the rate × duration rule; **three lessons today** so the dashboard always has something to mark off; the first student's rate rises mid-month so the monthly report raises its multi-price warning; the three starter e-mail templates are materialised. |
+| Google-dependent state | Lessons are seeded as `calendarSyncStatus = DISABLED` — the demo tutor has no Google tokens, and a fake `SYNCED` would be misleading. |
+
+Verified locally end to end: `SPRING_PROFILES_ACTIVE=local ./gradlew bootRun` seeds 8 students /
+107 lessons, `/dev/login` (directly and through the `ng serve` proxy) returns a working session,
+and `/api/dashboard`, `/api/statistics` and `/api/reports/monthly` all return populated data
+including the multi-price warning.

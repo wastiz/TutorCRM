@@ -1,13 +1,7 @@
 export type StudentStatus = 'ACTIVE' | 'PAUSED' | 'FINISHED';
 export type LessonFormat = 'ONLINE' | 'OFFLINE' | 'BOTH';
 export type DayOfWeek =
-  | 'MONDAY'
-  | 'TUESDAY'
-  | 'WEDNESDAY'
-  | 'THURSDAY'
-  | 'FRIDAY'
-  | 'SATURDAY'
-  | 'SUNDAY';
+  'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
 export const DAYS_OF_WEEK: DayOfWeek[] = [
   'MONDAY',
@@ -44,10 +38,13 @@ export interface StudentRequest {
   status?: StudentStatus | null;
   startDate?: string | null;
   endDate?: string | null;
+  leaveReason?: string | null;
   parentName?: string | null;
   parentPhone?: string | null;
   parentEmail?: string | null;
   parentSecondaryPhone?: string | null;
+  parentIsikukood?: string | null;
+  telegram?: string | null;
   schedules: ScheduleEntry[];
   ignoreDuplicates?: boolean;
 }
@@ -79,10 +76,13 @@ export interface Student {
   status: StudentStatus;
   startDate: string | null;
   endDate: string | null;
+  leaveReason: string | null;
   parentName: string | null;
   parentPhone: string | null;
   parentEmail: string | null;
   parentSecondaryPhone: string | null;
+  parentIsikukood: string | null;
+  telegram: string | null;
   schedules: StudentScheduleView[];
   createdAt: string;
   updatedAt: string;
@@ -99,6 +99,7 @@ export interface StudentSummary {
   status: StudentStatus;
   email: string | null;
   phone: string | null;
+  telegram: string | null;
   nextLessonAt: string | null;
 }
 

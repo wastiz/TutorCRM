@@ -1,0 +1,96 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Students</h1>
+    <a mat-flat-button color="primary" routerLink="/students/new">
+      <mat-icon>add</mat-icon>
+      Create student
+    </a>
+  </div>
+
+  <div class="filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Search</mat-label>
+      <input matInput [formControl]="search" placeholder="Name, email, phone, subject…" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select [formControl]="status">
+        <mat-option [value]="null">All</mat-option>
+        <mat-option value="ACTIVE">Active</mat-option>
+        <mat-option value="PAUSED">Paused</mat-option>
+        <mat-option value="FINISHED">Finished</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="scroll-x">
+    <table mat-table [dataSource]="students()" class="full-width">
+      <ng-container matColumnDef="number">
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let s">{{ s.studentNumber }}</td>
+      </ng-container>
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let s">
+          <a [routerLink]="['/students', s.id]">{{ s.fullName }}</a>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef>Subject</th>
+        <td mat-cell *matCellDef="let s">{{ s.subject || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="grade">
+        <th mat-header-cell *matHeaderCellDef>Grade</th>
+        <td mat-cell *matCellDef="let s">{{ s.grade ?? '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="format">
+        <th mat-header-cell *matHeaderCellDef>Format</th>
+        <td mat-cell *matCellDef="let s">{{ formatLabel(s.lessonFormat) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="price">
+        <th mat-header-cell *matHeaderCellDef>Rate / 60 min</th>
+        <td mat-cell *matCellDef="let s">
+          {{ s.lessonPrice != null ? '€' + s.lessonPrice : '—' }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="telegram">
+        <th mat-header-cell *matHeaderCellDef>Telegram</th>
+        <td mat-cell *matCellDef="let s">
+          @if (telegramUrl(s.telegram); as url) {
+            <a [href]="url" target="_blank" rel="noopener" [matTooltip]="'@' + s.telegram">
+              <mat-icon>send</mat-icon>
+            </a>
+          } @else {
+            —
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let s">
+          <span class="badge" [class]="'badge-' + s.status.toLowerCase()">{{
+            statusLabel(s.status)
+          }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="next">
+        <th mat-header-cell *matHeaderCellDef>Next lesson</th>
+        <td mat-cell *matCellDef="let s">
+          {{ s.nextLessonAt ? (s.nextLessonAt | date: 'short') : '—' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+  </div>
+
+  @if (!loading() && students().length === 0) {
+    <p class="muted empty">No students yet. Create one or import from a message.</p>
+  }
+</div>

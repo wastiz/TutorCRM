@@ -38,7 +38,8 @@ public class StudentService {
                     StudentSummaryDto dto = mapper.toSummary(s);
                     return new StudentSummaryDto(dto.id(), dto.studentNumber(), dto.fullName(),
                             dto.subject(), dto.grade(), dto.lessonFormat(), dto.lessonPrice(),
-                            dto.status(), dto.email(), dto.phone(), nextLessons.get(s.getId()));
+                            dto.status(), dto.email(), dto.phone(), dto.telegram(),
+                            nextLessons.get(s.getId()));
                 })
                 .toList();
     }
@@ -82,12 +83,16 @@ public class StudentService {
         log.info("Deleted student {} for user {}", id, userId);
     }
 
+    /** Archiving is where the tutor records why a student left — it feeds the statistics page. */
     @Transactional
-    public StudentDto archive(UUID userId, UUID id) {
+    public StudentDto archive(UUID userId, UUID id, String leaveReason) {
         Student student = require(userId, id);
         student.setStatus(StudentStatus.FINISHED);
         if (student.getEndDate() == null) {
             student.setEndDate(LocalDate.now());
+        }
+        if (StringUtils.hasText(leaveReason)) {
+            student.setLeaveReason(leaveReason.trim());
         }
         return mapper.toDto(repository.save(student));
     }
@@ -148,10 +153,13 @@ public class StudentService {
         s.setLessonPrice(r.lessonPrice());
         s.setStartDate(r.startDate());
         s.setEndDate(r.endDate());
+        s.setLeaveReason(trimToNull(r.leaveReason()));
         s.setParentName(trimToNull(r.parentName()));
         s.setParentPhone(trimToNull(r.parentPhone()));
         s.setParentEmail(trimToNull(r.parentEmail()));
         s.setParentSecondaryPhone(trimToNull(r.parentSecondaryPhone()));
+        s.setParentIsikukood(trimToNull(r.parentIsikukood()));
+        s.setTelegram(normalizeTelegram(r.telegram()));
         if (r.status() != null) {
             s.setStatus(r.status());
         } else if (isCreate) {
@@ -189,6 +197,21 @@ public class StudentService {
 
     private static boolean contains(String value, String needle) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
+    }
+
+    /** Store a bare username; a pasted {@code @name} or {@code t.me/name} link is normalized. */
+    private static String normalizeTelegram(String v) {
+        String t = trimToNull(v);
+        if (t == null) {
+            return null;
+        }
+        t = t.replaceFirst("^(?i)(?:https?://)?(?:t(?:elegram)?\\.me|telegram\\.dog)/", "");
+        t = t.replaceFirst("^@", "");
+        int query = t.indexOf('?');
+        if (query > 0) {
+            t = t.substring(0, query);
+        }
+        return t.isEmpty() ? null : t;
     }
 
     private static String trim(String v) {

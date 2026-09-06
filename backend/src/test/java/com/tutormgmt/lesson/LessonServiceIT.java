@@ -38,10 +38,10 @@ class LessonServiceIT extends AbstractPostgresIT {
         studentRepository.deleteAll();
         userRepository.deleteAll();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "t@x.ee", "T", "T")).getId();
-        StudentDto s = studentService.create(userId, new StudentRequest(
-                "Kirill", "Tsarenkov", "k@x.ee", "1", null, 14, 9, null, "Math", null, null, null,
-                LessonFormat.ONLINE, new BigDecimal("20.00"), null, null, null, null, null, null, null,
-                List.of(), false));
+        StudentDto s = studentService.create(userId, StudentRequest.builder()
+                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee").phone("1")
+                .age(14).grade(9).subject("Math").lessonFormat(LessonFormat.ONLINE)
+                .lessonPrice(new BigDecimal("20.00")).schedules(List.of()).build());
         studentId = s.id();
     }
 
@@ -65,13 +65,42 @@ class LessonServiceIT extends AbstractPostgresIT {
     }
 
     @Test
+    void priceFollowsTheStudentRateTimesTheLessonLength() {
+        assertThat(lessonService.create(userId, at(dt(3, 17), 60, null)).price())
+                .isEqualByComparingTo("20.00");
+        assertThat(lessonService.create(userId, at(dt(4, 17), 90, null)).price())
+                .isEqualByComparingTo("30.00");
+        assertThat(lessonService.create(userId, at(dt(5, 17), 120, null)).price())
+                .isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    void anExplicitPriceStillWins() {
+        assertThat(lessonService.create(userId, at(dt(3, 17), 90, new BigDecimal("35.00"))).price())
+                .isEqualByComparingTo("35.00");
+    }
+
+    @Test
+    void changingTheDurationRepricesTheLessonButEditingNotesDoesNot() {
+        LessonDto lesson = lessonService.create(userId, at(dt(3, 17), 60, null));
+
+        LessonDto stretched = lessonService.update(userId, lesson.id(),
+                new LessonRequest(studentId, dt(3, 17), dt(3, 17).plusMinutes(120), null, null, null));
+        assertThat(stretched.price()).isEqualByComparingTo("40.00");
+
+        LessonDto renotedAfterRateChange = lessonService.update(userId, lesson.id(),
+                new LessonRequest(studentId, dt(3, 17), dt(3, 17).plusMinutes(120), null, null, "note"));
+        assertThat(renotedAfterRateChange.price()).isEqualByComparingTo("40.00");
+    }
+
+    @Test
     void lessonPriceIsFrozenEvenIfStudentPriceChangesLater() {
         LessonDto lesson = lessonService.create(userId, at(dt(3, 17), 60, null));
 
-        studentService.update(userId, studentId, new StudentRequest(
-                "Kirill", "Tsarenkov", "k@x.ee", "1", null, null, null, null, "Math", null, null, null,
-                LessonFormat.ONLINE, new BigDecimal("25.00"), null, null, null, null, null, null, null,
-                List.of(), false));
+        studentService.update(userId, studentId, StudentRequest.builder()
+                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee").phone("1").subject("Math")
+                .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("25.00"))
+                .schedules(List.of()).build());
 
         assertThat(lessonService.get(userId, lesson.id()).price()).isEqualByComparingTo("20.00");
     }

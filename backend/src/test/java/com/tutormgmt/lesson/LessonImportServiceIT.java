@@ -67,10 +67,10 @@ class LessonImportServiceIT extends AbstractPostgresIT {
         studentRepository.deleteAll();
         userRepository.deleteAll();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "t@x.ee", "T", "T")).getId();
-        StudentDto k = studentService.create(userId, new StudentRequest("Kirill", "Tsarenkov",
-                "kirill@x.ee", null, null, null, null, null, "Эстонский", null, null, null,
-                LessonFormat.ONLINE, new BigDecimal("20"), null, null, null, null, null, null, null,
-                List.of(), false));
+        StudentDto k = studentService.create(userId, StudentRequest.builder()
+                .firstName("Kirill").lastName("Tsarenkov").email("kirill@x.ee").subject("Эстонский")
+                .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("20"))
+                .schedules(List.of()).build());
         kirillId = k.id();
     }
 

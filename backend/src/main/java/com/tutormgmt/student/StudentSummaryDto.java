@@ -16,6 +16,8 @@ public record StudentSummaryDto(
         StudentStatus status,
         String email,
         String phone,
+        /** Telegram username without the "@" — the list links straight to the chat. */
+        String telegram,
         /** Populated from Lesson data (Phase 4); null until then. */
         OffsetDateTime nextLessonAt
 ) {}

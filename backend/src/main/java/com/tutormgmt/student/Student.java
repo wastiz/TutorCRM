@@ -92,6 +92,10 @@ public class Student extends Auditable {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    /** Why the student stopped. Free text — the tutor writes it in their own words. */
+    @Column(name = "leave_reason", length = 1000)
+    private String leaveReason;
+
     @Column(name = "parent_name")
     private String parentName;
 
@@ -103,6 +107,13 @@ public class Student extends Auditable {
 
     @Column(name = "parent_secondary_phone")
     private String parentSecondaryPhone;
+
+    /** Parent's Estonian personal code, recognized by the import parser. */
+    @Column(name = "parent_isikukood")
+    private String parentIsikukood;
+
+    /** Telegram username (without the "@") or a t.me link. */
+    private String telegram;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "student_id", nullable = false)

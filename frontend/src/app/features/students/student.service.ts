@@ -39,8 +39,11 @@ export class StudentService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  archive(id: string): Observable<Student> {
-    return this.http.post<Student>(`${this.base}/${id}/archive`, {});
+  /** Marks the student finished; the optional reason feeds the statistics page. */
+  archive(id: string, leaveReason?: string | null): Observable<Student> {
+    return this.http.post<Student>(`${this.base}/${id}/archive`, {
+      leaveReason: leaveReason ?? null,
+    });
   }
 
   checkDuplicates(request: DuplicateCheckRequest): Observable<{ duplicates: StudentSummary[] }> {

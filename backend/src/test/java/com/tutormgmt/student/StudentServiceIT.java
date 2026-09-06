@@ -41,11 +41,14 @@ class StudentServiceIT extends AbstractPostgresIT {
     }
 
     private StudentRequest request(String first, String last, String email, String phone) {
-        return new StudentRequest(first, last, email, phone, null, 14, 9, "School", "Math",
-                "goal", "beginner", null, LessonFormat.ONLINE, new BigDecimal("20.00"),
-                null, null, null, "Parent", "555", null, null,
-                List.of(new StudentRequest.ScheduleEntry(DayOfWeek.THURSDAY, LocalTime.of(17, 0), LocalTime.of(18, 0), 1)),
-                false);
+        return StudentRequest.builder()
+                .firstName(first).lastName(last).email(email).phone(phone)
+                .age(14).grade(9).school("School").subject("Math").goal("goal").level("beginner")
+                .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("20.00"))
+                .parentName("Parent").parentPhone("555")
+                .schedules(List.of(new StudentRequest.ScheduleEntry(
+                        DayOfWeek.THURSDAY, LocalTime.of(17, 0), LocalTime.of(18, 0), 1)))
+                .build();
     }
 
     @Test
@@ -90,22 +93,43 @@ class StudentServiceIT extends AbstractPostgresIT {
                 .isInstanceOf(ApiException.class)
                 .satisfies(e -> assertThat(((ApiException) e).getCode()).isEqualTo("POSSIBLE_DUPLICATE"));
 
-        StudentRequest forced = new StudentRequest("Kirill", "Tsarenkov", "dup@x.ee", "5350", null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, List.of(), true);
+        StudentRequest forced = StudentRequest.builder()
+                .firstName("Kirill").lastName("Tsarenkov").email("dup@x.ee").phone("5350")
+                .schedules(List.of()).ignoreDuplicates(true).build();
         assertThat(service.create(userId, forced).studentNumber()).isEqualTo("2");
+    }
+
+    @Test
+    void telegramIsStoredAsABareUsernameWhateverTheTutorPastes() {
+        StudentDto fromLink = service.create(userId, StudentRequest.builder()
+                .firstName("A").lastName("B").email("a1@x.ee").telegram("https://t.me/anna_tutor")
+                .schedules(List.of()).ignoreDuplicates(true).build());
+        StudentDto fromHandle = service.create(userId, StudentRequest.builder()
+                .firstName("C").lastName("D").email("c@x.ee").telegram("@anna_tutor")
+                .schedules(List.of()).ignoreDuplicates(true).build());
+        StudentDto empty = service.create(userId, StudentRequest.builder()
+                .firstName("E").lastName("F").email("e@x.ee").telegram("  ")
+                .schedules(List.of()).ignoreDuplicates(true).build());
+
+        assertThat(fromLink.telegram()).isEqualTo("anna_tutor");
+        assertThat(fromHandle.telegram()).isEqualTo("anna_tutor");
+        assertThat(empty.telegram()).isNull();
     }
 
     @Test
     void updateReplacesSchedulesAndFields() {
         StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
 
-        StudentRequest update = new StudentRequest("Kirill", "Tsarenkov", "k@x.ee", "111", "39001010001",
-                15, 10, "New School", "Physics", "new goal", "intermediate", "note", LessonFormat.BOTH,
-                new BigDecimal("25.00"), StudentStatus.PAUSED, null, null, "Mama", "777", null, null,
-                List.of(
+        StudentRequest update = StudentRequest.builder()
+                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee").phone("111")
+                .isikukood("39001010001").age(15).grade(10).school("New School").subject("Physics")
+                .goal("new goal").level("intermediate").notes("note").lessonFormat(LessonFormat.BOTH)
+                .lessonPrice(new BigDecimal("25.00")).status(StudentStatus.PAUSED)
+                .parentName("Mama").parentPhone("777")
+                .schedules(List.of(
                         new StudentRequest.ScheduleEntry(DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(11, 0), 2),
-                        new StudentRequest.ScheduleEntry(DayOfWeek.FRIDAY, LocalTime.of(12, 0), LocalTime.of(13, 0), 2)),
-                false);
+                        new StudentRequest.ScheduleEntry(DayOfWeek.FRIDAY, LocalTime.of(12, 0), LocalTime.of(13, 0), 2)))
+                .build();
 
         StudentDto updated = service.update(userId, created.id(), update);
 
@@ -121,7 +145,7 @@ class StudentServiceIT extends AbstractPostgresIT {
     void archiveSetsFinishedAndEndDate() {
         StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
 
-        StudentDto archived = service.archive(userId, created.id());
+        StudentDto archived = service.archive(userId, created.id(), null);
 
         assertThat(archived.status()).isEqualTo(StudentStatus.FINISHED);
         assertThat(archived.endDate()).isNotNull();
@@ -148,7 +172,7 @@ class StudentServiceIT extends AbstractPostgresIT {
     void listFiltersBySearchAndStatus() {
         service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
         StudentDto artjom = service.create(userId, request("Artjom", "Zimin", "z@x.ee", "222"));
-        service.archive(userId, artjom.id());
+        service.archive(userId, artjom.id(), null);
 
         assertThat(service.list(userId, "tsar", null)).hasSize(1);
         assertThat(service.list(userId, null, StudentStatus.ACTIVE)).hasSize(1);

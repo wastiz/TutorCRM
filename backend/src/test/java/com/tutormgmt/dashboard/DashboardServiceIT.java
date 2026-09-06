@@ -42,9 +42,10 @@ class DashboardServiceIT extends AbstractPostgresIT {
     }
 
     private UUID student(StudentStatus status) {
-        var s = studentService.create(userId, new StudentRequest("A", "B", null, null, null, null, null,
-                null, "Math", null, null, null, LessonFormat.ONLINE, new BigDecimal("20"),
-                status, null, null, null, null, null, null, List.of(), true));
+        var s = studentService.create(userId, StudentRequest.builder()
+                .firstName("A").lastName("B").subject("Math").lessonFormat(LessonFormat.ONLINE)
+                .lessonPrice(new BigDecimal("20")).status(status)
+                .schedules(List.of()).ignoreDuplicates(true).build());
         return s.id();
     }
 
@@ -78,11 +79,28 @@ class DashboardServiceIT extends AbstractPostgresIT {
     }
 
     @Test
+    void todaysLessonsAreListedInChronologicalOrderForMarkingOff() {
+        UUID sid = student(StudentStatus.ACTIVE);
+        OffsetDateTime dayStart = OffsetDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.DAYS);
+        lesson(sid, dayStart.plusHours(18), LessonStatus.PLANNED);
+        lesson(sid, dayStart.plusHours(9), LessonStatus.PLANNED);
+        lesson(sid, dayStart.plusDays(1).plusHours(9), LessonStatus.PLANNED);   // tomorrow
+
+        DashboardDto d = dashboardService.summary(userId);
+
+        assertThat(d.todaysLessonList()).hasSize(2);
+        assertThat(d.todaysLessonList().get(0).startTime())
+                .isBefore(d.todaysLessonList().get(1).startTime());
+        assertThat(d.todaysLessons()).isEqualTo(2);
+    }
+
+    @Test
     void emptyAccountReturnsZeros() {
         DashboardDto d = dashboardService.summary(userId);
         assertThat(d.activeStudents()).isZero();
         assertThat(d.todaysLessons()).isZero();
         assertThat(d.thisMonthEarnings()).isEqualByComparingTo("0");
         assertThat(d.upcomingLessons()).isEmpty();
+        assertThat(d.todaysLessonList()).isEmpty();
     }
 }

@@ -1,0 +1,106 @@
+<div class="page">
+  <div class="page-header"><h1>Statistics</h1></div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (data(); as s) {
+    <div class="tiles">
+      <div class="tile">
+        <mat-icon>group</mat-icon>
+        <span class="value">{{ s.students.total }}</span>
+        <span class="label">Students in total</span>
+        <span class="sub muted">
+          {{ s.students.active }} active · {{ s.students.paused }} paused ·
+          {{ s.students.finished }} finished
+        </span>
+      </div>
+      <div class="tile">
+        <mat-icon>check_circle</mat-icon>
+        <span class="value">{{ s.lessons.completed }}</span>
+        <span class="label">Lessons completed</span>
+        <span class="sub muted">{{ s.lessons.planned }} still planned</span>
+      </div>
+      <div class="tile">
+        <mat-icon>event_busy</mat-icon>
+        <span class="value">{{ s.lessons.cancelled + s.lessons.noShow }}</span>
+        <span class="label">Lessons that did not happen</span>
+        <span class="sub muted">
+          {{ s.lessons.cancelled }} cancelled · {{ s.lessons.noShow }} no-show
+        </span>
+      </div>
+      <div class="tile accent">
+        <mat-icon>percent</mat-icon>
+        <span class="value">{{ s.lessons.cancellationRate }}%</span>
+        <span class="label">Fell through</span>
+        <span class="sub muted">of all lessons that were decided</span>
+      </div>
+      <div class="tile">
+        <mat-icon>savings</mat-icon>
+        <span class="value">€{{ s.totalEarnings | number: '1.0-2' }}</span>
+        <span class="label">Earned all time</span>
+      </div>
+    </div>
+
+    <mat-card>
+      <mat-card-header><mat-card-title>Last 12 months</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div class="scroll-x">
+          <table class="months">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="num">Completed</th>
+                <th class="num">Cancelled</th>
+                <th class="num">No-show</th>
+                <th class="num">Earned</th>
+                <th class="bar-head"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of s.byMonth; track m.month) {
+                <tr>
+                  <td>{{ monthLabel(m.month) }}</td>
+                  <td class="num">{{ m.completed }}</td>
+                  <td class="num">{{ m.cancelled }}</td>
+                  <td class="num">{{ m.noShow }}</td>
+                  <td class="num">€{{ m.earnings | number: '1.0-2' }}</td>
+                  <td class="bar-cell">
+                    <span class="bar done" [style.width.%]="share(m.completed)"></span>
+                    <span class="bar lost" [style.width.%]="share(m.cancelled + m.noShow)"></span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Why students left</mat-card-title>
+        <mat-card-subtitle>Written when a student is archived</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (s.leaveReasons.length) {
+          <ul class="reasons">
+            @for (r of s.leaveReasons; track r.studentId) {
+              <li>
+                <a [routerLink]="['/students', r.studentId]">{{ r.studentName }}</a>
+                @if (r.endDate) {
+                  <span class="muted"> · {{ r.endDate | date: 'dd.MM.yyyy' }}</span>
+                }
+                <div class="reason">{{ r.reason }}</div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">
+            No reasons recorded yet. Archive a student and write why they stopped — it shows up
+            here.
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0008-01-student-leave-reason
+      author: tutor-management
+      changes:
+        - addColumn:
+            tableName: student
+            columns:
+              - column: { name: leave_reason, type: varchar(1000) }

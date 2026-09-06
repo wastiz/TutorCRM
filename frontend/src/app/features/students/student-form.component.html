@@ -1,0 +1,178 @@
+@if (warnings.length) {
+  <div class="warnings">
+    <mat-icon>warning</mat-icon>
+    <ul>
+      @for (w of warnings; track w) {
+        <li>{{ w }}</li>
+      }
+    </ul>
+  </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="grid">
+    <mat-form-field>
+      <mat-label>First name</mat-label>
+      <input matInput formControlName="firstName" required />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Last name</mat-label>
+      <input matInput formControlName="lastName" required />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" required />
+      @if (form.controls['email'].hasError('required') && form.controls['email'].touched) {
+        <mat-error>Email is required</mat-error>
+      } @else if (form.controls['email'].hasError('email')) {
+        <mat-error>Enter a valid email address</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Phone</mat-label>
+      <input matInput formControlName="phone" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Isikukood</mat-label>
+      <input matInput formControlName="isikukood" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Telegram</mat-label>
+      <input matInput formControlName="telegram" placeholder="username" />
+      <mat-hint>Username, &#64;username or a t.me link</mat-hint>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Age</mat-label>
+      <input matInput type="number" formControlName="age" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Grade</mat-label>
+      <input matInput type="number" formControlName="grade" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>School</mat-label>
+      <input matInput formControlName="school" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Subject</mat-label>
+      <input matInput formControlName="subject" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Level</mat-label>
+      <input matInput formControlName="level" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Lesson format</mat-label>
+      <mat-select formControlName="lessonFormat">
+        <mat-option [value]="null">—</mat-option>
+        @for (f of formats; track f) {
+          <mat-option [value]="f">{{ f }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Rate per 60 min (€)</mat-label>
+      <input matInput type="number" step="0.01" formControlName="lessonPrice" />
+      <mat-hint>Lesson price = rate × length: 1 h ×1, 1.5 h ×1.5, 2 h ×2</mat-hint>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        @for (s of statuses; track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Start date</mat-label>
+      <input matInput type="date" formControlName="startDate" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>End date</mat-label>
+      <input matInput type="date" formControlName="endDate" />
+    </mat-form-field>
+  </div>
+
+  <mat-form-field class="wide">
+    <mat-label>Goal / description</mat-label>
+    <textarea matInput rows="2" formControlName="goal"></textarea>
+  </mat-form-field>
+  <mat-form-field class="wide">
+    <mat-label>Notes</mat-label>
+    <textarea matInput rows="2" formControlName="notes"></textarea>
+  </mat-form-field>
+  @if (form.value.status === 'FINISHED') {
+    <mat-form-field class="wide">
+      <mat-label>Why the student left</mat-label>
+      <textarea matInput rows="2" formControlName="leaveReason"></textarea>
+      <mat-hint>Collected on the statistics page</mat-hint>
+    </mat-form-field>
+  }
+
+  <h3>Parent</h3>
+  <div class="grid">
+    <mat-form-field>
+      <mat-label>Parent name</mat-label>
+      <input matInput formControlName="parentName" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Parent phone</mat-label>
+      <input matInput formControlName="parentPhone" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Parent email</mat-label>
+      <input matInput type="email" formControlName="parentEmail" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Parent secondary phone</mat-label>
+      <input matInput formControlName="parentSecondaryPhone" />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Parent isikukood</mat-label>
+      <input matInput formControlName="parentIsikukood" />
+    </mat-form-field>
+  </div>
+
+  <h3>
+    Preferred schedule
+    <button mat-icon-button type="button" (click)="addSchedule()" aria-label="Add slot">
+      <mat-icon>add</mat-icon>
+    </button>
+  </h3>
+  <div formArrayName="schedules">
+    @for (row of schedules.controls; track row; let i = $index) {
+      <div class="schedule-row" [formGroupName]="i">
+        <mat-form-field>
+          <mat-label>Day</mat-label>
+          <mat-select formControlName="dayOfWeek">
+            @for (d of days; track d) {
+              <mat-option [value]="d">{{ dayLabel(d) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>From</mat-label>
+          <input matInput type="time" formControlName="startTime" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>To</mat-label>
+          <input matInput type="time" formControlName="endTime" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Lessons / week</mat-label>
+          <input matInput type="number" formControlName="lessonsPerWeek" />
+        </mat-form-field>
+        <button mat-icon-button type="button" (click)="removeSchedule(i)" aria-label="Remove slot">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    }
+  </div>
+
+  <div class="actions">
+    <button mat-button type="button" (click)="cancelled.emit()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="busy || form.invalid">
+      {{ submitLabel }}
+    </button>
+  </div>
+</form>

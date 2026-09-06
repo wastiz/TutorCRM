@@ -1,0 +1,128 @@
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tile {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tile mat-icon {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.tile .value {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.tile .label {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.tile .sub {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.tile.accent {
+  background: #e8eaf6;
+}
+
+mat-card {
+  margin-bottom: 16px;
+}
+
+table.months {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table.months th,
+table.months td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: left;
+}
+
+table.months th {
+  color: rgba(0, 0, 0, 0.55);
+  font-weight: 500;
+}
+
+table.months .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-head {
+  width: 30%;
+}
+
+.bar-cell {
+  white-space: nowrap;
+}
+
+.bar {
+  display: inline-block;
+  height: 10px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.bar.done {
+  background: #2e7d32;
+}
+
+.bar.lost {
+  background: #c62828;
+}
+
+ul.reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+ul.reasons li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+ul.reasons li:last-child {
+  border-bottom: none;
+}
+
+ul.reasons a {
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.reason {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 599px) {
+  .tiles {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+
+  .tile {
+    padding: 12px 14px;
+  }
+
+  .tile .value {
+    font-size: 22px;
+  }
+}

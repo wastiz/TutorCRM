@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>{{ data.template ? 'Edit template' : 'New template' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form">
+    <div class="row">
+      <mat-form-field class="grow">
+        <mat-label>Template name</mat-label>
+        <input matInput formControlName="name" required />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Kind</mat-label>
+        <mat-select formControlName="kind">
+          @for (k of kinds; track k) {
+            <mat-option [value]="k">{{ kindLabel(k) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field>
+      <mat-label>Subject</mat-label>
+      <input matInput formControlName="subject" required />
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Body</mat-label>
+      <textarea matInput rows="12" formControlName="body" required></textarea>
+    </mat-form-field>
+
+    <div class="placeholders">
+      <span class="muted">Click to insert:</span>
+      @for (p of placeholders(); track p.name) {
+        <button
+          mat-stroked-button
+          type="button"
+          class="chip"
+          [matTooltip]="p.description"
+          (click)="insert(p.name)"
+        >
+          {{ '{{' + p.name + '}}' }}
+        </button>
+      }
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid || busy()" (click)="save()">
+    Save
+  </button>
+</mat-dialog-actions>
