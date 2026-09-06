@@ -57,7 +57,7 @@ class LessonImportServiceIT extends AbstractPostgresIT {
     @Autowired UserRepository userRepository;
 
     private UUID userId;
-    private UUID kirillId;
+    private UUID maksimId;
 
     @BeforeEach
     void setUp() {
@@ -68,10 +68,10 @@ class LessonImportServiceIT extends AbstractPostgresIT {
         userRepository.deleteAll();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "t@x.ee", "T", "T")).getId();
         StudentDto k = studentService.create(userId, StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("kirill@x.ee").subject("Эстонский")
+                .firstName("Maksim").lastName("Ivanov").email("maksim@x.ee").subject("Эстонский")
                 .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("20"))
                 .schedules(List.of()).build());
-        kirillId = k.id();
+        maksimId = k.id();
     }
 
     private static CalendarEventSource.ExternalEvent event(String id, String summary, OffsetDateTime start) {
@@ -85,7 +85,7 @@ class LessonImportServiceIT extends AbstractPostgresIT {
 
     @Test
     void previewGuessesStudentFromEventTitle() {
-        FakeSourceConfig.EVENTS.add(event("e1", "Урок Kirill", at(3, 17)));
+        FakeSourceConfig.EVENTS.add(event("e1", "Урок Maksim", at(3, 17)));
         FakeSourceConfig.EVENTS.add(event("e2", "Dentist", at(4, 9)));
 
         var preview = importService.preview(userId, at(1, 0), at(30, 0));
@@ -95,7 +95,7 @@ class LessonImportServiceIT extends AbstractPostgresIT {
         assertThat(preview.newEvents())
                 .filteredOn(n -> n.eventId().equals("e1")).singleElement()
                 .satisfies(n -> {
-                    assertThat(n.suggestedStudentId()).isEqualTo(kirillId);
+                    assertThat(n.suggestedStudentId()).isEqualTo(maksimId);
                     assertThat(n.suggestedPrice()).isEqualByComparingTo("20");
                 });
         assertThat(preview.newEvents())
@@ -105,16 +105,16 @@ class LessonImportServiceIT extends AbstractPostgresIT {
 
     @Test
     void importCreatesLinkedLessonsAndTagsTheEvent() {
-        FakeSourceConfig.EVENTS.add(event("e1", "Kirill Tsarenkov", at(3, 17)));
+        FakeSourceConfig.EVENTS.add(event("e1", "Maksim Ivanov", at(3, 17)));
 
         var result = importService.importSelected(userId, new GoogleImportDto.ImportRequest(
                 at(1, 0), at(30, 0),
-                List.of(new GoogleImportDto.ImportRequest.Item("e1", kirillId, null)), false));
+                List.of(new GoogleImportDto.ImportRequest.Item("e1", maksimId, null)), false));
 
         assertThat(result.imported()).isEqualTo(1);
         assertThat(FakeSourceConfig.LINKED).containsExactly("e1");
 
-        var lessons = lessonService.list(userId, kirillId, null, null, null);
+        var lessons = lessonService.list(userId, maksimId, null, null, null);
         assertThat(lessons).singleElement().satisfies(l -> {
             assertThat(l.googleCalendarEventId()).isEqualTo("e1");
             assertThat(l.calendarSyncStatus()).isEqualTo(CalendarSyncStatus.SYNCED);
@@ -125,28 +125,28 @@ class LessonImportServiceIT extends AbstractPostgresIT {
 
     @Test
     void doesNotReImportAnAlreadyLinkedEvent() {
-        FakeSourceConfig.EVENTS.add(event("e1", "Kirill", at(3, 17)));
+        FakeSourceConfig.EVENTS.add(event("e1", "Maksim", at(3, 17)));
         importService.importSelected(userId, new GoogleImportDto.ImportRequest(at(1, 0), at(30, 0),
-                List.of(new GoogleImportDto.ImportRequest.Item("e1", kirillId, null)), false));
+                List.of(new GoogleImportDto.ImportRequest.Item("e1", maksimId, null)), false));
 
         var preview = importService.preview(userId, at(1, 0), at(30, 0));
         assertThat(preview.newEvents()).isEmpty();
         assertThat(preview.alreadyLinked()).isEqualTo(1);
 
         var again = importService.importSelected(userId, new GoogleImportDto.ImportRequest(at(1, 0), at(30, 0),
-                List.of(new GoogleImportDto.ImportRequest.Item("e1", kirillId, null)), false));
+                List.of(new GoogleImportDto.ImportRequest.Item("e1", maksimId, null)), false));
         assertThat(again.imported()).isZero();
     }
 
     @Test
     void detectsAndUpdatesMovedLinkedEvent() {
-        FakeSourceConfig.EVENTS.add(event("e1", "Kirill", at(3, 17)));
+        FakeSourceConfig.EVENTS.add(event("e1", "Maksim", at(3, 17)));
         importService.importSelected(userId, new GoogleImportDto.ImportRequest(at(1, 0), at(30, 0),
-                List.of(new GoogleImportDto.ImportRequest.Item("e1", kirillId, null)), false));
+                List.of(new GoogleImportDto.ImportRequest.Item("e1", maksimId, null)), false));
 
         // event moved in Google
         FakeSourceConfig.EVENTS.clear();
-        FakeSourceConfig.EVENTS.add(event("e1", "Kirill", at(5, 19)));
+        FakeSourceConfig.EVENTS.add(event("e1", "Maksim", at(5, 19)));
 
         var preview = importService.preview(userId, at(1, 0), at(30, 0));
         assertThat(preview.movedLessons()).singleElement()
@@ -155,7 +155,7 @@ class LessonImportServiceIT extends AbstractPostgresIT {
         var result = importService.importSelected(userId, new GoogleImportDto.ImportRequest(at(1, 0), at(30, 0),
                 List.of(), true));
         assertThat(result.updated()).isEqualTo(1);
-        assertThat(lessonService.list(userId, kirillId, null, null, null).get(0).startTime())
+        assertThat(lessonService.list(userId, maksimId, null, null, null).get(0).startTime())
                 .isEqualTo(at(5, 19));
     }
 }

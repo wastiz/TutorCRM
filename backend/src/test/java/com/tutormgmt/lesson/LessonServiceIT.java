@@ -39,7 +39,7 @@ class LessonServiceIT extends AbstractPostgresIT {
         userRepository.deleteAll();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "t@x.ee", "T", "T")).getId();
         StudentDto s = studentService.create(userId, StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee").phone("1")
+                .firstName("Maksim").lastName("Ivanov").email("k@x.ee").phone("1")
                 .age(14).grade(9).subject("Math").lessonFormat(LessonFormat.ONLINE)
                 .lessonPrice(new BigDecimal("20.00")).schedules(List.of()).build());
         studentId = s.id();
@@ -61,7 +61,7 @@ class LessonServiceIT extends AbstractPostgresIT {
         assertThat(lesson.status()).isEqualTo(LessonStatus.PLANNED);
         // Google not connected in tests -> calendar sync is disabled, lesson still saved (CLAUDE.md 34)
         assertThat(lesson.calendarSyncStatus()).isEqualTo(CalendarSyncStatus.DISABLED);
-        assertThat(lesson.studentName()).isEqualTo("Kirill Tsarenkov");
+        assertThat(lesson.studentName()).isEqualTo("Maksim Ivanov");
     }
 
     @Test
@@ -98,7 +98,7 @@ class LessonServiceIT extends AbstractPostgresIT {
         LessonDto lesson = lessonService.create(userId, at(dt(3, 17), 60, null));
 
         studentService.update(userId, studentId, StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee").phone("1").subject("Math")
+                .firstName("Maksim").lastName("Ivanov").email("k@x.ee").phone("1").subject("Math")
                 .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("25.00"))
                 .schedules(List.of()).build());
 

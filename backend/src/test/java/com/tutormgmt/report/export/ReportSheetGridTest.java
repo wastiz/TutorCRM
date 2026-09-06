@@ -17,9 +17,9 @@ class ReportSheetGridTest {
         MonthlyReportDto report = new MonthlyReportDto(
                 YearMonth.of(2026, 8), "август 26",
                 List.of(
-                        new StudentReportRowDto("Nikita Durmanov", "1", "nikita.durmanov97@gmail.com",
-                                null, "39709250057", "Эстонский", 1, new BigDecimal("12"), new BigDecimal("12")),
-                        new StudentReportRowDto("Андрей", "8", null, null, "61701090107", "Эстонский",
+                        new StudentReportRowDto("Pavel Kuznetsov", "1", "pavel.kuznetsov@example.com",
+                                null, "39709250002", "Эстонский", 1, new BigDecimal("12"), new BigDecimal("12")),
+                        new StudentReportRowDto("Артур", "8", null, null, "61701090009", "Эстонский",
                                 2, new BigDecimal("18"), new BigDecimal("36"))),
                 3, new BigDecimal("48"), List.of(), List.of());
 
@@ -30,14 +30,14 @@ class ReportSheetGridTest {
         assertThat(rows.get(0).get(0)).isEqualTo("август 26");
         assertThat(rows.get(1)).containsExactlyElementsOf(ReportSheetGrid.HEADERS);
 
-        // Report.md section 5: Nikita Durmanov | 1 | ... | (blank parent) | 39709250057 | Эстонский | 1 | 12 | 12
-        List<Object> nikita = rows.get(2);
-        assertThat(nikita.get(0)).isEqualTo("Nikita Durmanov");
-        assertThat(nikita.get(1)).isEqualTo("1");
-        assertThat(nikita.get(3)).isEqualTo("");            // missing parent -> empty (section 21)
-        assertThat(nikita.get(4)).isEqualTo("39709250057"); // stored as text, leading zeros safe
-        assertThat(nikita.get(6)).isEqualTo(1);
-        assertThat(nikita.get(8)).isEqualTo(new BigDecimal("12"));
+        // Report.md section 5: Pavel Kuznetsov | 1 | ... | (blank parent) | 39709250002 | Эстонский | 1 | 12 | 12
+        List<Object> pavel = rows.get(2);
+        assertThat(pavel.get(0)).isEqualTo("Pavel Kuznetsov");
+        assertThat(pavel.get(1)).isEqualTo("1");
+        assertThat(pavel.get(3)).isEqualTo("");            // missing parent -> empty (section 21)
+        assertThat(pavel.get(4)).isEqualTo("39709250002"); // stored as text, leading zeros safe
+        assertThat(pavel.get(6)).isEqualTo(1);
+        assertThat(pavel.get(8)).isEqualTo(new BigDecimal("12"));
 
         // total row: G = lesson count, J = amount, H/I blank (section 15: "7 | | | 96")
         List<Object> total = rows.get(grid.totalRowIndex());

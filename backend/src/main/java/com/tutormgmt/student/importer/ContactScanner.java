@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
  *
  * <p>Recognition does not rely on the position of a value, which is what makes the import
  * tolerant of a changed field order, of missing separators and of glued values such as
- * {@code ljulap@gmail.com5350 6894}. A value is classified by what it is:
+ * {@code maksim.ivanov@example.com5555 0101}. A value is classified by what it is:
  * <ul>
  *   <li>11 digits with a valid isikukood century/date/checksum → {@code isikukood};</li>
  *   <li>7–12 digits (optionally {@code +372}-prefixed, spaces and dashes allowed) → phone;</li>

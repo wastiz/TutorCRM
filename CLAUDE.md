@@ -539,7 +539,7 @@ Paste student message here...
 Например:
 
 ```text
-Kirill Tsarenkov	ljulap@gmail.com	5350 6894	14	9	Tlvl	Эстонский язык	Слабый, особенно речь,нужна подготовка к экзамену 	ЧЕТВЕРГ	17-20	2	оба варианта подходят		Liudmila Lapshina 		51109180029	47808060232
+Maksim Ivanov	maksim.ivanov@example.com	5555 0101	14	9	Tlvl	Эстонский язык	Слабый, особенно речь,нужна подготовка к экзамену 	ЧЕТВЕРГ	17-20	2	оба варианта подходят		Natalia Ivanova 		51109180007	47808060003
 ```
 
 ---
@@ -604,9 +604,9 @@ Parser должен:
 Пример:
 
 ```text
-Kirill Tsarenkov
-ljulap@gmail.com
-5350 6894
+Maksim Ivanov
+maksim.ivanov@example.com
+5555 0101
 14
 9
 Tlvl
@@ -617,19 +617,19 @@ Tlvl
 2
 оба варианта подходят
 (empty)
-Liudmila Lapshina
-51109180029
-47808060232
+Natalia Ivanova
+51109180007
+47808060003
 ```
 
 должен превращаться примерно в:
 
 ```json
 {
-  "firstName": "Kirill",
-  "lastName": "Tsarenkov",
-  "email": "ljulap@gmail.com",
-  "phone": "5350 6894",
+  "firstName": "Maksim",
+  "lastName": "Ivanov",
+  "email": "maksim.ivanov@example.com",
+  "phone": "5555 0101",
   "age": 14,
   "grade": 9,
   "school": "Tlvl",
@@ -640,9 +640,9 @@ Liudmila Lapshina
   "preferredTimeTo": "20:00",
   "lessonsPerWeek": 2,
   "lessonFormat": "BOTH",
-  "parentName": "Liudmila Lapshina",
-  "parentPhone": "51109180029",
-  "parentSecondaryPhone": "47808060232"
+  "parentName": "Natalia Ivanova",
+  "parentPhone": "51109180007",
+  "parentSecondaryPhone": "47808060003"
 }
 ```
 
@@ -680,13 +680,13 @@ Create Student
 Student Preview
 
 Name:
-Kirill Tsarenkov
+Maksim Ivanov
 
 Email:
-ljulap@gmail.com
+maksim.ivanov@example.com
 
 Phone:
-5350 6894
+5555 0101
 
 Age:
 14
@@ -716,10 +716,10 @@ Format:
 Online + Offline
 
 Parent:
-Liudmila Lapshina
+Natalia Ivanova
 
 Parent phone:
-51109180029
+51109180007
 ```
 
 Пользователь должен иметь возможность исправить данные перед сохранением.
@@ -789,14 +789,14 @@ FirstName LastName
 Например:
 
 ```text
-Kirill Tsarenkov
+Maksim Ivanov
 ```
 
 →
 
 ```text
-firstName = Kirill
-lastName = Tsarenkov
+firstName = Maksim
+lastName = Ivanov
 ```
 
 Если имя состоит из большего количества частей, parser не должен молча терять информацию.
@@ -1019,8 +1019,8 @@ TabStudentParser      AiStudentParser
 ```text
 Possible duplicate found:
 
-Kirill Tsarenkov
-ljulap@gmail.com
+Maksim Ivanov
+maksim.ivanov@example.com
 
 [Use existing student]
 [Create anyway]
@@ -1419,8 +1419,8 @@ Total earnings:
 ```text
 Student              Lessons    Price    Total
 
-Kirill Tsarenkov       8        €25      €200
-Artjom Zimin           10       €25      €250
+Maksim Ivanov          8        €25      €200
+Denis Sokolov          10       €25      €250
 Other Student          10       €27      €270
 
 TOTAL                  28                 €720
@@ -1499,8 +1499,8 @@ Student | Lessons | Price | Total
 Например:
 
 ```text
-Kirill Tsarenkov | 8  | 25 | 200
-Artjom Zimin     | 10 | 25 | 250
+Maksim Ivanov    | 8  | 25 | 200
+Denis Sokolov    | 10 | 25 | 250
 Ivan Ivanov      | 10 | 27 | 270
 
 TOTAL            | 28 |    | 720
@@ -1589,7 +1589,7 @@ Request:
 
 ```json
 {
-  "rawText": "Kirill Tsarenkov\tljulap@gmail.com\t..."
+  "rawText": "Maksim Ivanov\tmaksim.ivanov@example.com\t..."
 }
 ```
 
@@ -1598,9 +1598,9 @@ Response:
 ```json
 {
   "student": {
-    "firstName": "Kirill",
-    "lastName": "Tsarenkov",
-    "email": "ljulap@gmail.com"
+    "firstName": "Maksim",
+    "lastName": "Ivanov",
+    "email": "maksim.ivanov@example.com"
   },
   "warnings": []
 }
@@ -1616,8 +1616,8 @@ Request:
 
 ```json
 {
-  "firstName": "Kirill",
-  "lastName": "Tsarenkov",
+  "firstName": "Maksim",
+  "lastName": "Ivanov",
   ...
 }
 ```
@@ -1773,7 +1773,7 @@ Backend:
 # 57. Example Input #1
 
 ```text
-Artjom Zimin	artemzimin171@gmail.com	58170531	18	12	TTG	Математика	Подготовка к экзаменам в 12 классе.Уровень слабый.	, ПЯТНИЦА, ВОСКРЕСЕНЬЕ		1	онлайн		Julia Zimina		50711217011	48303010225
+Denis Sokolov	denis.sokolov@example.com	55550202	18	12	TTG	Математика	Подготовка к экзаменам в 12 классе.Уровень слабый.	, ПЯТНИЦА, ВОСКРЕСЕНЬЕ		1	онлайн		Anna Sokolova		50711210000	48303010007
 ```
 
 Parser должен быть способен обработать:
@@ -1789,23 +1789,23 @@ Parser должен быть способен обработать:
 # 58. Example Input #2
 
 ```text
-Kirill Tsarenkov	ljulap@gmail.com	5350 6894	14	9	Tlvl	Эстонский язык	Слабый, особенно речь,нужна подготовка к экзамену 	ЧЕТВЕРГ	17-20	2	оба варианта подходят		Liudmila Lapshina 		51109180029	47808060232
+Maksim Ivanov	maksim.ivanov@example.com	5555 0101	14	9	Tlvl	Эстонский язык	Слабый, особенно речь,нужна подготовка к экзамену 	ЧЕТВЕРГ	17-20	2	оба варианта подходят		Natalia Ivanova 		51109180007	47808060003
 ```
 
 Ожидаемый результат:
 
 ```text
 First name:
-Kirill
+Maksim
 
 Last name:
-Tsarenkov
+Ivanov
 
 Email:
-ljulap@gmail.com
+maksim.ivanov@example.com
 
 Phone:
-5350 6894
+5555 0101
 
 Age:
 14
@@ -1835,13 +1835,13 @@ Format:
 BOTH
 
 Parent:
-Liudmila Lapshina
+Natalia Ivanova
 
 Parent phone:
-51109180029
+51109180007
 
 Parent secondary phone:
-47808060232
+47808060003
 ```
 
 ---

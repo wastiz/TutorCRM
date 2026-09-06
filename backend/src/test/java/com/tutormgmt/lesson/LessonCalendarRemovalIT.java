@@ -49,7 +49,7 @@ class LessonCalendarRemovalIT extends AbstractPostgresIT {
         calendar.removed.clear();
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "t@x.ee", "T", "T")).getId();
         studentId = studentService.create(userId, StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee")
+                .firstName("Maksim").lastName("Ivanov").email("k@x.ee")
                 .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("20.00"))
                 .schedules(List.of()).build()).id();
     }

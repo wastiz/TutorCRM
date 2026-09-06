@@ -21,7 +21,7 @@ public final class ImportValues {
 
     /**
      * Deliberately stops the TLD at the first non-letter so a glued
-     * {@code ljulap@gmail.com5350} still yields {@code ljulap@gmail.com}.
+     * {@code maksim.ivanov@example.com5350} still yields {@code maksim.ivanov@example.com}.
      */
     public static final Pattern EMAIL =
             Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}");
@@ -87,7 +87,7 @@ public final class ImportValues {
         return new String[] {parts[0], parts[1]};
     }
 
-    /** {@code "KirillTsarenkov"} → {@code "Kirill Tsarenkov"}; leaves normal text untouched. */
+    /** {@code "MaksimIvanov"} → {@code "Maksim Ivanov"}; leaves normal text untouched. */
     public static String splitCamelCase(String s) {
         return s.replaceAll("(?<=\\p{Ll})(?=\\p{Lu})", " ");
     }

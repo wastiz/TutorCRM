@@ -59,8 +59,8 @@ class ReportServiceExportTest {
 
     private Student student(String number) {
         Student s = Student.create(userId, number);
-        s.setFirstName("Kirill");
-        s.setLastName("Tsarenkov");
+        s.setFirstName("Maksim");
+        s.setLastName("Ivanov");
         s.setSubject("Эстонский");
         s.setLessonFormat(LessonFormat.ONLINE);
         return s;
