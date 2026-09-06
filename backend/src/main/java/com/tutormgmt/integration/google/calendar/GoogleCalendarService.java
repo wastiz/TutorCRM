@@ -153,7 +153,13 @@ public class GoogleCalendarService {
             Event existing;
             try {
                 existing = client.events().get(calendarId, eventId).execute();
-            } catch (IOException notFound) {
+            } catch (IOException e) {
+                // only a genuinely missing event may be re-created — any other failure (network,
+                // 403, rate limit) must surface, otherwise a retry silently duplicates the event
+                if (!isMissing(e)) {
+                    throw GoogleErrors.translate("update the calendar event", e);
+                }
+                log.info("Calendar event {} no longer exists — creating it again", eventId);
                 return createEvent(userId, calendarId, data);
             }
             Event updated = client.events().update(calendarId, eventId, toEvent(existing, data)).execute();
@@ -161,6 +167,12 @@ public class GoogleCalendarService {
         } catch (IOException e) {
             throw GoogleErrors.translate("update the calendar event", e);
         }
+    }
+
+    /** 404/410 — the event was deleted in Google. */
+    private static boolean isMissing(IOException e) {
+        return e instanceof com.google.api.client.googleapis.json.GoogleJsonResponseException g
+                && (g.getStatusCode() == 404 || g.getStatusCode() == 410);
     }
 
     public void deleteEvent(UUID userId, String calendarId, String eventId) {
@@ -179,15 +191,24 @@ public class GoogleCalendarService {
     private static Event toEvent(Event event, CalendarEventData data) {
         event.setSummary(data.summary());
         event.setDescription(data.description());
-        event.setStart(new EventDateTime().setDateTime(new DateTime(data.start().toInstant().toEpochMilli()))
-                .setTimeZone(data.start().getOffset().getId()));
-        event.setEnd(new EventDateTime().setDateTime(new DateTime(data.end().toInstant().toEpochMilli()))
-                .setTimeZone(data.end().getOffset().getId()));
+        // The RFC 3339 value already carries the UTC offset, so no timeZone field is needed.
+        // (It used to be set to OffsetDateTime.getOffset().getId(), which yields "Z" / "+03:00" —
+        // not IANA zone ids, which Google rejects. That is what broke lesson sync.)
+        event.setStart(new EventDateTime()
+                .setDateTime(new DateTime(data.start().toInstant().toEpochMilli())));
+        event.setEnd(new EventDateTime()
+                .setDateTime(new DateTime(data.end().toInstant().toEpochMilli())));
+
         Event.ExtendedProperties props = event.getExtendedProperties() != null
                 ? event.getExtendedProperties() : new Event.ExtendedProperties();
-        props.setPrivate(Map.of(
-                APP_PROPERTY, APP_PROPERTY_VALUE,
-                LESSON_ID_PROPERTY, data.lessonId().toString()));
+        // keep whatever else lives on the event; only our own two keys are ours to set
+        Map<String, String> priv = new HashMap<>();
+        if (props.getPrivate() != null) {
+            priv.putAll(props.getPrivate());
+        }
+        priv.put(APP_PROPERTY, APP_PROPERTY_VALUE);
+        priv.put(LESSON_ID_PROPERTY, data.lessonId().toString());
+        props.setPrivate(priv);
         event.setExtendedProperties(props);
         return event;
     }

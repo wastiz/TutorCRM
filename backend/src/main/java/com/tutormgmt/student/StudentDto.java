@@ -27,10 +27,13 @@ public record StudentDto(
         StudentStatus status,
         LocalDate startDate,
         LocalDate endDate,
+        String leaveReason,
         String parentName,
         String parentPhone,
         String parentEmail,
         String parentSecondaryPhone,
+        String parentIsikukood,
+        String telegram,
         List<StudentScheduleDto> schedules,
         Instant createdAt,
         Instant updatedAt

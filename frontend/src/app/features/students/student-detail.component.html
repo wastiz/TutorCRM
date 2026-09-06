@@ -1,0 +1,217 @@
+<div class="page">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (student(); as s) {
+    <div class="page-header">
+      <h1>#{{ s.studentNumber }} · {{ s.firstName }} {{ s.lastName }}</h1>
+      <div class="header-actions">
+        <button mat-flat-button color="primary" (click)="addLesson(s)">
+          <mat-icon>add</mat-icon> Add lesson
+        </button>
+        <button mat-stroked-button (click)="sendEmail(s)">
+          <mat-icon>mail</mat-icon> Send email
+        </button>
+        <button
+          mat-stroked-button
+          [disabled]="syncing()"
+          matTooltip="Push this student's upcoming lessons to Google Calendar"
+          (click)="syncCalendarForStudent(s)"
+        >
+          <mat-icon>sync</mat-icon> Sync calendar
+        </button>
+        <a mat-stroked-button [routerLink]="['/students', s.id, 'edit']">
+          <mat-icon>edit</mat-icon> Edit
+        </a>
+        @if (s.status !== 'FINISHED') {
+          <button mat-stroked-button (click)="archive(s)">
+            <mat-icon>archive</mat-icon> Archive
+          </button>
+        }
+        <button mat-stroked-button color="warn" (click)="remove(s)">
+          <mat-icon>delete</mat-icon> Delete
+        </button>
+      </div>
+    </div>
+
+    @if (overview(); as o) {
+      <div class="stats">
+        <div class="stat">
+          <span class="value">{{ o.completedThisMonth }}</span
+          ><span class="label">Completed this month</span>
+        </div>
+        <div class="stat">
+          <span class="value">€{{ o.earningsThisMonth }}</span
+          ><span class="label">Earnings this month</span>
+        </div>
+        <div class="stat">
+          <span class="value">€{{ o.earningsTotal }}</span
+          ><span class="label">Total earnings</span>
+        </div>
+      </div>
+    }
+
+    <div class="cards">
+      <mat-card>
+        <mat-card-header><mat-card-title>Student information</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <dl>
+            <dt>Status</dt>
+            <dd>{{ statusLabel(s.status) }}</dd>
+            <dt>Email</dt>
+            <dd>{{ s.email || '—' }}</dd>
+            <dt>Phone</dt>
+            <dd>{{ s.phone || '—' }}</dd>
+            <dt>Telegram</dt>
+            <dd>
+              @if (telegramUrl(s.telegram); as url) {
+                <a [href]="url" target="_blank" rel="noopener" class="telegram">
+                  <mat-icon>send</mat-icon>
+                  &#64;{{ s.telegram }}
+                </a>
+              } @else {
+                —
+              }
+            </dd>
+            <dt>Isikukood</dt>
+            <dd>{{ s.isikukood || '—' }}</dd>
+            <dt>Age</dt>
+            <dd>{{ s.age ?? '—' }}</dd>
+            <dt>Grade</dt>
+            <dd>{{ s.grade ?? '—' }}</dd>
+            <dt>School</dt>
+            <dd>{{ s.school || '—' }}</dd>
+            <dt>Subject</dt>
+            <dd>{{ s.subject || '—' }}</dd>
+            <dt>Level</dt>
+            <dd>{{ s.level || '—' }}</dd>
+            <dt>Format</dt>
+            <dd>{{ formatLabel(s.lessonFormat) }}</dd>
+            <dt>Rate / 60 min</dt>
+            <dd>{{ s.lessonPrice != null ? '€' + s.lessonPrice : '—' }}</dd>
+            <dt>Goal</dt>
+            <dd>{{ s.goal || '—' }}</dd>
+            <dt>Notes</dt>
+            <dd>{{ s.notes || '—' }}</dd>
+            @if (s.status === 'FINISHED') {
+              <dt>Why they left</dt>
+              <dd>{{ s.leaveReason || '—' }}</dd>
+            }
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Schedule</mat-card-title></mat-card-header>
+        <mat-card-content>
+          @if (s.schedules.length) {
+            <ul class="plain">
+              @for (row of s.schedules; track $index) {
+                <li>
+                  {{ dayLabel(row.dayOfWeek) }}
+                  @if (row.startTime) {
+                    · {{ row.startTime }}–{{ row.endTime }}
+                  }
+                  @if (row.lessonsPerWeek) {
+                    · {{ row.lessonsPerWeek }}/week
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="muted">No preferred schedule set.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Parent information</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <dl>
+            <dt>Name</dt>
+            <dd>{{ s.parentName || '—' }}</dd>
+            <dt>Phone</dt>
+            <dd>{{ s.parentPhone || '—' }}</dd>
+            <dt>Secondary phone</dt>
+            <dd>{{ s.parentSecondaryPhone || '—' }}</dd>
+            <dt>Email</dt>
+            <dd>{{ s.parentEmail || '—' }}</dd>
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="span-2">
+        <mat-card-header><mat-card-title>Upcoming lessons</mat-card-title></mat-card-header>
+        <mat-card-content>
+          @if (overview()?.upcoming?.length) {
+            @for (l of overview()!.upcoming; track l.id) {
+              <div class="lesson-row">
+                <span
+                  >{{ l.startTime | date: 'EEE d MMM, HH:mm' }} –
+                  {{ l.endTime | date: 'HH:mm' }}</span
+                >
+                <span class="muted">€{{ l.price }}</span>
+                @if (l.calendarSyncStatus === 'FAILED') {
+                  <button
+                    mat-icon-button
+                    matTooltip="Calendar sync failed — retry"
+                    (click)="retrySync(l)"
+                  >
+                    <mat-icon color="warn">sync_problem</mat-icon>
+                  </button>
+                } @else if (l.calendarSyncStatus === 'SYNCED') {
+                  <mat-icon class="synced" matTooltip="In Google Calendar"
+                    >event_available</mat-icon
+                  >
+                }
+                <span class="spacer"></span>
+                <button mat-icon-button [matMenuTriggerFor]="menu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item (click)="editLesson(l)">
+                    <mat-icon>edit</mat-icon> Edit
+                  </button>
+                  <button mat-menu-item (click)="mark(l, 'complete')">
+                    <mat-icon>check_circle</mat-icon> Mark completed
+                  </button>
+                  <button mat-menu-item (click)="mark(l, 'no-show')">
+                    <mat-icon>person_off</mat-icon> No show
+                  </button>
+                  <button mat-menu-item (click)="mark(l, 'cancel')">
+                    <mat-icon>cancel</mat-icon> Cancel
+                  </button>
+                  <button mat-menu-item (click)="repeat(l)">
+                    <mat-icon>repeat</mat-icon> Repeat weekly…
+                  </button>
+                </mat-menu>
+              </div>
+            }
+          } @else {
+            <p class="muted">No upcoming lessons.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="span-2">
+        <mat-card-header><mat-card-title>Past lessons</mat-card-title></mat-card-header>
+        <mat-card-content>
+          @if (overview()?.past?.length) {
+            @for (l of overview()!.past; track l.id) {
+              <div class="lesson-row">
+                <span>{{ l.startTime | date: 'EEE d MMM yyyy, HH:mm' }}</span>
+                <span class="badge" [class]="'st-' + l.status.toLowerCase()">{{
+                  lessonStatusLabel[l.status]
+                }}</span>
+                <span class="muted">€{{ l.price }}</span>
+                <span class="spacer"></span>
+                <button mat-button (click)="editLesson(l)">Edit</button>
+              </div>
+            }
+          } @else {
+            <p class="muted">No past lessons.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

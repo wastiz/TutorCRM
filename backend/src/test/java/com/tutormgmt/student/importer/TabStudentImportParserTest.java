@@ -42,8 +42,12 @@ class TabStudentImportParserTest {
             assertThat(s.lessonsPerWeek()).isEqualTo(2);
             assertThat(s.lessonFormat()).isEqualTo(LessonFormat.BOTH);
             assertThat(s.parentName()).isEqualTo("Liudmila Lapshina");
-            assertThat(s.parentPhone()).isEqualTo("51109180029");
-            assertThat(s.parentSecondaryPhone()).isEqualTo("47808060232");
+            // the two 11-digit values are personal codes, not phone numbers: the student's own
+            // (born 2011-09-18 — matches age 14) and the parent's (born 1978-08-06)
+            assertThat(s.isikukood()).isEqualTo("51109180029");
+            assertThat(s.parentIsikukood()).isEqualTo("47808060232");
+            assertThat(s.parentPhone()).isNull();
+            assertThat(s.parentSecondaryPhone()).isNull();
             assertThat(s.schedules()).singleElement().satisfies(e -> {
                 assertThat(e.dayOfWeek()).isEqualTo(DayOfWeek.THURSDAY);
                 assertThat(e.startTime()).isEqualTo("17:00");
@@ -74,8 +78,8 @@ class TabStudentImportParserTest {
             assertThat(s.lessonFormat()).isEqualTo(LessonFormat.ONLINE);
             assertThat(s.lessonsPerWeek()).isEqualTo(1);
             assertThat(s.parentName()).isEqualTo("Julia Zimina");
-            assertThat(s.parentPhone()).isEqualTo("50711217011");
-            assertThat(s.parentSecondaryPhone()).isEqualTo("48303010225");
+            assertThat(s.isikukood()).isEqualTo("50711217011");
+            assertThat(s.parentIsikukood()).isEqualTo("48303010225");
             assertThat(s.schedules()).hasSize(2);
         }
     }
@@ -213,6 +217,58 @@ class TabStudentImportParserTest {
         assertThat(s.parentName()).isEqualTo("Parent Name");
         assertThat(s.parentPhone()).isEqualTo("1110000");
         assertThat(s.parentSecondaryPhone()).isEqualTo("2220000");
+    }
+
+    @Test
+    void isikukoodIsRecognizedWhereverItSits() {
+        String raw = fields16("A B", "", "51109180029", "", "", "", "", "", "", "", "", "",
+                "", "Parent Name", "", "");
+        ImportedStudentDto s = parser.parse(raw).student();
+
+        assertThat(s.isikukood()).isEqualTo("51109180029");
+        assertThat(s.phone()).isNull();
+    }
+
+    @Test
+    void ageIsDerivedFromTheIsikukoodWhenMissing() {
+        String raw = fields16("A B", "", "51109180029", "", "", "", "", "", "", "", "", "",
+                "", "Parent Name", "", "");
+        StudentImportPreviewDto p = parser.parse(raw);
+
+        assertThat(p.student().age())
+                .isEqualTo(java.time.Period.between(
+                        java.time.LocalDate.of(2011, 9, 18), java.time.LocalDate.now()).getYears());
+        assertThat(p.warnings()).anyMatch(w -> w.contains("isikukood"));
+    }
+
+    @Test
+    void gluedEmailAndPhoneAreSeparated() {
+        String raw = fields16("Kirill Tsarenkov", "ljulap@gmail.com5350 6894", "", "14", "", "", "", "",
+                "", "", "", "", "", "Liudmila Lapshina", "", "");
+        ImportedStudentDto s = parser.parse(raw).student();
+
+        assertThat(s.email()).isEqualTo("ljulap@gmail.com");
+        assertThat(s.phone()).isEqualTo("5350 6894");
+    }
+
+    @Test
+    void phoneGluedToIsikukoodIsSplit() {
+        String raw = fields16("A B", "", "5350689451109180029", "", "", "", "", "", "", "", "", "",
+                "", "Parent Name", "", "");
+        ImportedStudentDto s = parser.parse(raw).student();
+
+        assertThat(s.phone()).isEqualTo("53506894");
+        assertThat(s.isikukood()).isEqualTo("51109180029");
+    }
+
+    @Test
+    void parentEmailIsRecognizedOnTheParentSide() {
+        String raw = fields16("A B", "kid@mail.ee", "", "", "", "", "", "", "", "", "", "",
+                "", "Parent Name", "mom@mail.ee", "");
+        ImportedStudentDto s = parser.parse(raw).student();
+
+        assertThat(s.email()).isEqualTo("kid@mail.ee");
+        assertThat(s.parentEmail()).isEqualTo("mom@mail.ee");
     }
 
     @Test

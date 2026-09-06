@@ -25,17 +25,23 @@ export const routes: Routes = [
       {
         path: 'students',
         loadComponent: () =>
-          import('./features/students/students-list.component').then((m) => m.StudentsListComponent),
+          import('./features/students/students-list.component').then(
+            (m) => m.StudentsListComponent,
+          ),
       },
       {
         path: 'students/new',
         loadComponent: () =>
-          import('./features/students/student-create.component').then((m) => m.StudentCreateComponent),
+          import('./features/students/student-create.component').then(
+            (m) => m.StudentCreateComponent,
+          ),
       },
       {
         path: 'students/:id',
         loadComponent: () =>
-          import('./features/students/student-detail.component').then((m) => m.StudentDetailComponent),
+          import('./features/students/student-detail.component').then(
+            (m) => m.StudentDetailComponent,
+          ),
       },
       {
         path: 'students/:id/edit',
@@ -46,6 +52,11 @@ export const routes: Routes = [
         path: 'calendar',
         loadComponent: () =>
           import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
+      },
+      {
+        path: 'statistics',
+        loadComponent: () =>
+          import('./features/statistics/statistics.component').then((m) => m.StatisticsComponent),
       },
       {
         path: 'reports',

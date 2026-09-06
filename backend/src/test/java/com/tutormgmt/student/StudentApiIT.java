@@ -92,11 +92,30 @@ class StudentApiIT extends AbstractPostgresIT {
 
     @Test
     void validationErrorIsStructured() throws Exception {
+        // first name and e-mail are both missing — the two required fields besides the last name
         mvc.perform(post("/api/students").with(asUser())
                         .contentType("application/json").content("{\"lastName\":\"X\",\"schedules\":[]}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-                .andExpect(jsonPath("$.errors", hasSize(1)));
+                .andExpect(jsonPath("$.errors", hasSize(2)));
+    }
+
+    /** Only first name, last name and e-mail are required; the rest is filled in later. */
+    @Test
+    void createsStudentWithNameAndEmailOnly() throws Exception {
+        mvc.perform(post("/api/students").with(asUser()).contentType("application/json")
+                        .content("{\"firstName\":\"Anna\",\"lastName\":\"Ivanova\",\"email\":\"anna@x.ee\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.studentNumber").value("1"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void createWithoutEmailIsRejected() throws Exception {
+        mvc.perform(post("/api/students").with(asUser()).contentType("application/json")
+                        .content("{\"firstName\":\"Anna\",\"lastName\":\"Ivanova\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
     }
 
     @Test
@@ -111,7 +130,8 @@ class StudentApiIT extends AbstractPostgresIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.student.firstName").value("Kirill"))
                 .andExpect(jsonPath("$.student.lessonFormat").value("BOTH"))
-                .andExpect(jsonPath("$.student.parentPhone").value("51109180029"))
+                .andExpect(jsonPath("$.student.isikukood").value("51109180029"))
+                .andExpect(jsonPath("$.student.parentIsikukood").value("47808060232"))
                 .andExpect(jsonPath("$.warnings", hasSize(0)));
     }
 }

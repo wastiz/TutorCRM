@@ -1,7 +1,7 @@
 package com.tutormgmt.authentication;
 
 import com.tutormgmt.security.AppPrincipal;
-import com.tutormgmt.security.OAuth2LoginSuccessHandler;
+import com.tutormgmt.security.SessionCookies;
 import com.tutormgmt.user.User;
 import com.tutormgmt.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class AuthenticationController {
 
     private final UserService userService;
     private final AuthenticationService authenticationService;
-    private final OAuth2LoginSuccessHandler successHandler;
+    private final SessionCookies sessionCookies;
 
     @GetMapping("/me")
     public CurrentUserDto me(@AuthenticationPrincipal AppPrincipal principal) {
@@ -37,7 +37,7 @@ public class AuthenticationController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, successHandler.clearingCookie().toString())
+                .header(HttpHeaders.SET_COOKIE, sessionCookies.clearing().toString())
                 .build();
     }
 

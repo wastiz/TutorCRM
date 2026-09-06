@@ -1,0 +1,23 @@
+.calendar-host {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+}
+@media (max-width: 599px) {
+  .calendar-host {
+    padding: 4px;
+  }
+  :host ::ng-deep .fc .fc-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  :host ::ng-deep .fc .fc-toolbar-title {
+    font-size: 16px;
+  }
+}
+:host ::ng-deep .fc {
+  font-size: 13px;
+}
+:host ::ng-deep .fc-event {
+  cursor: pointer;
+}

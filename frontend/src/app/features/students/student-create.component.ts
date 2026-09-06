@@ -26,87 +26,8 @@ import { StudentService } from './student.service';
     MatIconModule,
     StudentFormComponent,
   ],
-  template: `
-    <div class="page">
-      <div class="page-header"><h1>Create student</h1></div>
-
-      <mat-tab-group>
-        <mat-tab label="Manual">
-          <div class="tab-body">
-            <app-student-form
-              submitLabel="Create student"
-              [busy]="busy()"
-              (save)="create($event)"
-              (cancelled)="cancel()"
-            />
-          </div>
-        </mat-tab>
-
-        <mat-tab label="Import from message">
-          <div class="tab-body">
-            @if (!parsed()) {
-              <mat-form-field class="wide" appearance="outline">
-                <mat-label>Paste student message here…</mat-label>
-                <textarea
-                  matInput
-                  rows="6"
-                  [formControl]="rawText"
-                  placeholder="Kirill Tsarenkov&#9;ljulap@gmail.com&#9;5350 6894&#9;…"
-                ></textarea>
-              </mat-form-field>
-              <div class="actions">
-                <button
-                  mat-flat-button
-                  color="primary"
-                  [disabled]="!rawText.value.trim() || parsing()"
-                  (click)="parse()"
-                >
-                  <mat-icon>bolt</mat-icon>
-                  Parse
-                </button>
-              </div>
-            } @else {
-              <div class="preview-head">
-                <span class="muted">Parsed {{ parsed()!.fieldCount }} fields — review and correct before saving.</span>
-                <button mat-button (click)="resetImport()">
-                  <mat-icon>restart_alt</mat-icon>
-                  Start over
-                </button>
-              </div>
-              <app-student-form
-                [value]="parsed()!.student"
-                [warnings]="parsed()!.warnings"
-                submitLabel="Create student"
-                [busy]="busy()"
-                (save)="create($event)"
-                (cancelled)="resetImport()"
-              />
-            }
-          </div>
-        </mat-tab>
-      </mat-tab-group>
-    </div>
-  `,
-  styles: [
-    `
-      .tab-body {
-        padding: 24px 4px;
-      }
-      .wide {
-        width: 100%;
-      }
-      .actions {
-        display: flex;
-        justify-content: flex-end;
-      }
-      .preview-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-    `,
-  ],
+  templateUrl: './student-create.component.html',
+  styleUrl: './student-create.component.scss',
 })
 export class StudentCreateComponent {
   private readonly service = inject(StudentService);

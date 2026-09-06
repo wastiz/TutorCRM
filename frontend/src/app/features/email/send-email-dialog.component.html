@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>Send email</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form">
+    <mat-form-field>
+      <mat-label>Template</mat-label>
+      <mat-select formControlName="templateId">
+        <mat-option [value]="null">— write from scratch —</mat-option>
+        @for (t of templates(); track t.id) {
+          <mat-option [value]="t.id">{{ t.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>To</mat-label>
+      <input matInput type="email" formControlName="to" [placeholder]="defaultRecipient()" />
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Subject</mat-label>
+      <input matInput formControlName="subject" />
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Message</mat-label>
+      <textarea matInput rows="12" formControlName="body"></textarea>
+    </mat-form-field>
+
+    @if (warnings().length) {
+      <div class="warnings">
+        <mat-icon>warning</mat-icon>
+        <ul>
+          @for (w of warnings(); track w) {
+            <li>{{ w }}</li>
+          }
+        </ul>
+      </div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    [disabled]="busy() || !form.value.subject?.trim() || !form.value.body?.trim()"
+    (click)="send()"
+  >
+    <mat-icon>send</mat-icon>
+    Send
+  </button>
+</mat-dialog-actions>

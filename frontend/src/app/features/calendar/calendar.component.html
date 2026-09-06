@@ -1,0 +1,18 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Calendar</h1>
+    <mat-slide-toggle [checked]="showCancelled()" (change)="toggleCancelled($event.checked)">
+      Show cancelled
+    </mat-slide-toggle>
+    <button
+      mat-stroked-button
+      (click)="openImport()"
+      [matBadge]="importCount() || null"
+      matBadgeColor="accent"
+    >
+      <mat-icon>sync</mat-icon>
+      Sync from Google
+    </button>
+  </div>
+  <div #cal class="calendar-host"></div>
+</div>

@@ -33,6 +33,8 @@ spring:
               - https://www.googleapis.com/auth/calendar
               - https://www.googleapis.com/auth/spreadsheets
               - https://www.googleapis.com/auth/drive.metadata.readonly
+              # send e-mail from the tutor's own address (templates feature)
+              - https://www.googleapis.com/auth/gmail.send
             redirect-uri: "${APP_API_BASE_URL:http://localhost:8080}/login/oauth2/code/google"
         provider:
           google:

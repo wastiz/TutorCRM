@@ -26,7 +26,7 @@ docker-compose.yml   Local PostgreSQL
 
 ## Local development
 
-Prerequisites: JDK 21, Node 24.15+, Docker.
+Prerequisites: JDK 21, Node 22.22.3+ (24.x recommended — the Angular CLI refuses older), Docker.
 
 ```bash
 # 1. Database
@@ -43,6 +43,25 @@ npm install
 npm start
 ```
 
+### Demo data for local clicking-around
+
+Running the backend with the `local` profile seeds a demo tutor with 8 students, ~107 lessons
+across every status, lessons scheduled for today, and the starter e-mail templates — then open
+<http://localhost:4200> and press **Dev sign-in** on the login screen (no Google account needed).
+
+```bash
+# regenerate with today's dates, replacing the demo data
+curl -X POST 'http://localhost:8080/dev/seed?reset=true'
+
+# or on every restart
+SPRING_PROFILES_ACTIVE=local APP_DEV_RESET_ON_STARTUP=true ./gradlew bootRun
+```
+
+Seeding only fills an *empty* demo account, so a restart after a code change keeps whatever you
+set up by hand. All of this lives behind the `local` profile: in a deployed environment the
+seeder and `/dev/**` do not exist at all, and the seeder only ever touches rows belonging to the
+demo tutor (`dev-local-seed`).
+
 ### Google OAuth setup
 
 Create an OAuth 2.0 Client (type: Web application) in Google Cloud Console with:
@@ -51,7 +70,8 @@ Create an OAuth 2.0 Client (type: Web application) in Google Cloud Console with:
 - Enabled APIs: Google Calendar API, Google Sheets API, Google Drive API
 
 Scopes requested: `openid email profile`,
-`.../auth/calendar`, `.../auth/spreadsheets`, `.../auth/drive.metadata.readonly`.
+`.../auth/calendar`, `.../auth/spreadsheets`, `.../auth/drive.metadata.readonly`,
+`.../auth/gmail.send` (sending template e-mails from the tutor's own address).
 
 ## Tests
 
@@ -75,7 +95,12 @@ All 8 phases from `CLAUDE.md` §62 are implemented:
 | 7 | Export the report to an existing Google Sheet (per-month worksheet, formatting) |
 | 8 | Dashboard aggregates |
 
-Backend: 59 tests (JUnit 5 + Testcontainers). Frontend builds + Vitest green.
+Post-MVP (see `docs/DECISIONS.md`): Google Calendar → app import, content-based student import
+parser (isikukood / phone / e-mail recognition, free-text and glued input), one rate per student
+with 1 / 1.5 / 2 h lessons, today's lessons marked off from the dashboard, e-mail templates sent
+through Gmail, per-student calendar sync, Telegram links, responsive layout, and a statistics page.
+
+Backend: 121 tests (JUnit 5 + Testcontainers). Frontend builds + Vitest green.
 End-to-end flow (import → student → lessons → report → dashboard) verified locally;
 see `docs/DECISIONS.md` for the full decision log and what still needs real Google
 credentials / a Railway account.

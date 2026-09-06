@@ -44,9 +44,10 @@ class ReportServiceIT extends AbstractPostgresIT {
     }
 
     private UUID student(String first, String last, String email, String parent, String isikukood, BigDecimal price) {
-        StudentDto s = studentService.create(userId, new StudentRequest(
-                first, last, email, null, isikukood, null, null, null, "Эстонский", null, null, null,
-                LessonFormat.ONLINE, price, null, null, null, parent, null, null, null, List.of(), false));
+        StudentDto s = studentService.create(userId, StudentRequest.builder()
+                .firstName(first).lastName(last).email(email).isikukood(isikukood)
+                .subject("Эстонский").lessonFormat(LessonFormat.ONLINE).lessonPrice(price)
+                .parentName(parent).schedules(List.of()).build());
         return s.id();
     }
 
@@ -94,9 +95,10 @@ class ReportServiceIT extends AbstractPostgresIT {
         completedLesson(sid, aug(12), new BigDecimal("12"), LessonStatus.COMPLETED);
 
         // student price rises later — August must stay at 12
-        studentService.update(userId, sid, new StudentRequest("A", "B", "a@x.ee", null, "1", null, null,
-                null, "Эстонский", null, null, null, LessonFormat.ONLINE, new BigDecimal("15"),
-                null, null, null, null, null, null, null, List.of(), false));
+        studentService.update(userId, sid, StudentRequest.builder()
+                .firstName("A").lastName("B").email("a@x.ee").isikukood("1").subject("Эстонский")
+                .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("15"))
+                .schedules(List.of()).build());
 
         MonthlyReportDto report = reportService.generate(userId, YearMonth.of(2026, 8));
         assertThat(report.totalAmount()).isEqualByComparingTo("24");

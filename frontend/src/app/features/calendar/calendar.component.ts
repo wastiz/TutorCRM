@@ -1,3 +1,4 @@
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import {
   AfterViewInit,
   Component,
@@ -10,6 +11,7 @@ import {
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Calendar, EventInput } from '@fullcalendar/core';
@@ -24,62 +26,39 @@ import { LessonService } from '../lessons/lesson.service';
 
 @Component({
   selector: 'app-calendar',
-  imports: [MatButtonModule, MatIconModule, MatBadgeModule],
-  template: `
-    <div class="page">
-      <div class="page-header">
-        <h1>Calendar</h1>
-        <button
-          mat-stroked-button
-          (click)="openImport()"
-          [matBadge]="importCount() || null"
-          matBadgeColor="accent"
-        >
-          <mat-icon>sync</mat-icon>
-          Sync from Google
-        </button>
-      </div>
-      <div #cal class="calendar-host"></div>
-    </div>
-  `,
-  styles: [
-    `
-      .calendar-host {
-        background: #fff;
-        padding: 12px;
-        border-radius: 8px;
-      }
-      :host ::ng-deep .fc {
-        font-size: 13px;
-      }
-      :host ::ng-deep .fc-event {
-        cursor: pointer;
-      }
-    `,
-  ],
+  imports: [MatButtonModule, MatIconModule, MatBadgeModule, MatSlideToggleModule],
+  templateUrl: './calendar.component.html',
+  styleUrl: './calendar.component.scss',
 })
 export class CalendarComponent implements AfterViewInit, OnDestroy {
   private readonly lessons = inject(LessonService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly host = viewChild.required<ElementRef<HTMLDivElement>>('cal');
+  private readonly breakpoints = inject(BreakpointObserver);
 
   private calendar?: Calendar;
   private cache = new Map<string, Lesson>();
   private range = { from: '', to: '' };
 
   readonly importCount = signal(0);
+  /** Lessons that did not happen are hidden — they are also deleted from Google Calendar. */
+  readonly showCancelled = signal(false);
   private lastPreview: GoogleImportPreview | null = null;
 
   ngAfterViewInit(): void {
+    // a week grid is unreadable on a phone — start on the day view with a compact toolbar
+    const handset = this.breakpoints.isMatched(Breakpoints.Handset);
     this.calendar = new Calendar(this.host().nativeElement, {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-      initialView: 'timeGridWeek',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay',
-      },
+      initialView: handset ? 'timeGridDay' : 'timeGridWeek',
+      headerToolbar: handset
+        ? { left: 'prev,next', center: 'title', right: 'timeGridDay,dayGridMonth' }
+        : {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay',
+          },
       nowIndicator: true,
       firstDay: 1,
       height: 'auto',
@@ -103,10 +82,18 @@ export class CalendarComponent implements AfterViewInit, OnDestroy {
     this.calendar?.destroy();
   }
 
+  toggleCancelled(show: boolean): void {
+    this.showCancelled.set(show);
+    void this.loadRange();
+  }
+
   private async loadRange(): Promise<void> {
     const list = await firstValueFrom(this.lessons.list(this.range));
     this.cache.clear();
-    const events: EventInput[] = list.map((l) => {
+    const visible = this.showCancelled()
+      ? list
+      : list.filter((l) => l.status !== 'CANCELLED' && l.status !== 'NO_SHOW');
+    const events: EventInput[] = visible.map((l) => {
       this.cache.set(l.id, l);
       return {
         id: l.id,

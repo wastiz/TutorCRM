@@ -41,7 +41,7 @@ public class DashboardService {
         BigDecimal expected = sum(month,
                 l -> l.status() == LessonStatus.COMPLETED || l.status() == LessonStatus.PLANNED);
 
-        long today = lessonService.list(userId, null, null, dayStart, dayStart.plusDays(1)).size();
+        List<LessonDto> todaysLessons = lessonService.list(userId, null, null, dayStart, dayStart.plusDays(1));
         long thisWeek = lessonService.list(userId, null, null, weekStart, weekStart.plusWeeks(1)).size();
 
         List<LessonDto> upcoming = lessonService.list(userId, null, LessonStatus.PLANNED, now, null)
@@ -49,11 +49,12 @@ public class DashboardService {
 
         return new DashboardDto(
                 studentRepository.countByUserIdAndStatus(userId, StudentStatus.ACTIVE),
-                today,
+                todaysLessons.size(),
                 thisWeek,
                 completedThisMonth,
                 earnings,
                 expected,
+                todaysLessons,
                 upcoming);
     }
 

@@ -7,5 +7,7 @@ export interface Dashboard {
   thisMonthCompletedLessons: number;
   thisMonthEarnings: number;
   thisMonthExpectedEarnings: number;
+  /** Today's lessons, chronological — marked off straight from the dashboard. */
+  todaysLessonList: Lesson[];
   upcomingLessons: Lesson[];
 }

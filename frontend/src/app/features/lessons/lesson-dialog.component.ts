@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -37,102 +37,8 @@ function toLocalInput(iso: string | Date): string {
     MatButtonModule,
     MatCheckboxModule,
   ],
-  template: `
-    <h2 mat-dialog-title>{{ data.lesson ? 'Edit lesson' : 'New lesson' }}</h2>
-    <mat-dialog-content>
-      <form [formGroup]="form" class="form">
-        <mat-form-field>
-          <mat-label>Student</mat-label>
-          <mat-select formControlName="studentId">
-            @for (s of students(); track s.id) {
-              <mat-option [value]="s.id">#{{ s.studentNumber }} · {{ s.fullName }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field>
-          <mat-label>Start</mat-label>
-          <input matInput type="datetime-local" formControlName="start" />
-        </mat-form-field>
-
-        <mat-form-field>
-          <mat-label>Duration (minutes)</mat-label>
-          <mat-select formControlName="durationMinutes">
-            @for (m of durations; track m) {
-              <mat-option [value]="m">{{ m }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field>
-          <mat-label>Price (€)</mat-label>
-          <input matInput type="number" step="0.01" formControlName="price" placeholder="student default" />
-        </mat-form-field>
-
-        @if (data.lesson) {
-          <mat-form-field>
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="status">
-              @for (s of statuses; track s) {
-                <mat-option [value]="s">{{ s }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        }
-
-        <mat-form-field class="wide">
-          <mat-label>Notes</mat-label>
-          <textarea matInput rows="2" formControlName="notes"></textarea>
-        </mat-form-field>
-
-        @if (!data.lesson) {
-          <mat-checkbox formControlName="repeat">Also create recurring lessons</mat-checkbox>
-          @if (form.controls.repeat.value) {
-            <div class="repeat-row">
-              <mat-form-field>
-                <mat-label>Extra lessons</mat-label>
-                <input matInput type="number" formControlName="occurrences" />
-              </mat-form-field>
-              <mat-form-field>
-                <mat-label>Every N weeks</mat-label>
-                <input matInput type="number" formControlName="intervalWeeks" />
-              </mat-form-field>
-            </div>
-          }
-        }
-      </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      @if (data.lesson) {
-        <button mat-button color="warn" (click)="remove()">Delete</button>
-      }
-      <span class="spacer"></span>
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-flat-button color="primary" [disabled]="form.invalid || busy()" (click)="save()">
-        Save
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [
-    `
-      .form {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-width: 420px;
-      }
-      .wide {
-        width: 100%;
-      }
-      .repeat-row {
-        display: flex;
-        gap: 12px;
-      }
-      .spacer {
-        flex: 1 1 auto;
-      }
-    `,
-  ],
+  templateUrl: './lesson-dialog.component.html',
+  styleUrl: './lesson-dialog.component.scss',
 })
 export class LessonDialogComponent {
   private readonly fb = inject(FormBuilder);
@@ -141,10 +47,17 @@ export class LessonDialogComponent {
   private readonly ref = inject(MatDialogRef<LessonDialogComponent, LessonDialogResult>);
   readonly data = inject<LessonDialogData>(MAT_DIALOG_DATA);
 
-  readonly durations = [30, 45, 60, 90, 120];
+  /** CLAUDE.md-era lessons could be any length; the standard offer is 1 / 1.5 / 2 hours. */
+  private static readonly STANDARD_DURATIONS = [60, 90, 120];
   readonly statuses: LessonStatus[] = ['PLANNED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'];
   readonly students = signal<StudentSummary[]>([]);
   readonly busy = signal(false);
+  /** Mirror the controls the computed price depends on (templates cannot read private fields). */
+  protected readonly selectedStudentId = signal<string>(
+    this.data.lesson?.studentId ?? this.data.studentId ?? '',
+  );
+  protected readonly durationMinutes = signal<number>(this.initialDuration());
+  protected readonly customPrice = signal(false);
 
   readonly form = this.fb.group({
     studentId: [this.data.lesson?.studentId ?? this.data.studentId ?? '', Validators.required],
@@ -153,7 +66,8 @@ export class LessonDialogComponent {
       Validators.required,
     ],
     durationMinutes: [this.initialDuration(), Validators.required],
-    price: [this.data.lesson?.price ?? null as number | null],
+    price: [{ value: this.data.lesson?.price ?? null, disabled: true } as unknown as number | null],
+    customPrice: [false],
     status: [this.data.lesson?.status ?? ('PLANNED' as LessonStatus)],
     notes: [this.data.lesson?.notes ?? ''],
     repeat: [false],
@@ -162,17 +76,67 @@ export class LessonDialogComponent {
   });
 
   constructor() {
-    this.studentService.list().subscribe((list) => this.students.set(list));
+    this.studentService.list().subscribe((list) => {
+      this.students.set(list);
+      // an existing lesson whose price does not follow the rate was priced by hand — keep it
+      const existing = this.data.lesson?.price;
+      const auto = this.autoPrice();
+      if (existing != null && auto != null && existing !== auto) {
+        this.form.controls.customPrice.setValue(true);
+      }
+    });
+
+    this.form.controls.studentId.valueChanges.subscribe((v) => this.selectedStudentId.set(v ?? ''));
+    this.form.controls.durationMinutes.valueChanges.subscribe((v) =>
+      this.durationMinutes.set(v ?? 60),
+    );
+    this.form.controls.customPrice.valueChanges.subscribe((v) => this.customPrice.set(!!v));
+
+    // as long as the tutor has not overridden it, the price follows rate × duration
+    effect(() => {
+      const auto = this.autoPrice();
+      const price = this.form.controls.price;
+      if (this.customPrice() || auto == null) {
+        price.enable({ emitEvent: false });
+        return;
+      }
+      price.setValue(auto, { emitEvent: false });
+      price.disable({ emitEvent: false });
+    });
   }
 
-  private initialDuration(): number {
-    if (this.data.lesson) {
-      const mins =
-        (new Date(this.data.lesson.endTime).getTime() - new Date(this.data.lesson.startTime).getTime()) /
-        60000;
-      return this.durations.includes(mins) ? mins : 60;
+  /** 1 h / 1.5 h / 2 h, plus the length this lesson already has when it is a different one. */
+  readonly durations = computed(() => {
+    const minutes = new Set([...LessonDialogComponent.STANDARD_DURATIONS, this.durationMinutes()]);
+    return [...minutes].sort((a, b) => a - b).map((m) => ({ minutes: m, label: durationLabel(m) }));
+  });
+
+  readonly rate = computed(
+    () => this.students().find((s) => s.id === this.selectedStudentId())?.lessonPrice ?? null,
+  );
+
+  readonly selectedStudentName = computed(
+    () => this.students().find((s) => s.id === this.selectedStudentId())?.fullName ?? 'student',
+  );
+
+  readonly factorLabel = computed(() => `${this.durationMinutes() / 60}`);
+
+  /** Rate × duration factor, rounded to cents — the same rule the backend applies. */
+  readonly autoPrice = computed(() => {
+    const rate = this.rate();
+    if (rate == null) {
+      return null;
     }
-    return 60;
+    return Math.round(rate * (this.durationMinutes() / 60) * 100) / 100;
+  });
+
+  private initialDuration(): number {
+    if (!this.data.lesson) {
+      return 60;
+    }
+    const start = new Date(this.data.lesson.startTime).getTime();
+    const end = new Date(this.data.lesson.endTime).getTime();
+    return Math.max(15, Math.round((end - start) / 60000));
   }
 
   async save(): Promise<void> {
@@ -185,7 +149,9 @@ export class LessonDialogComponent {
         studentId: v.studentId!,
         startTime: start.toISOString(),
         endTime: end.toISOString(),
-        price: v.price === null || v.price === undefined ? null : Number(v.price),
+        // an untouched price is left to the backend so the rate stays the single source of truth
+        price:
+          (v.customPrice || this.autoPrice() == null) && v.price != null ? Number(v.price) : null,
         notes: v.notes || null,
         status: this.data.lesson ? v.status : null,
       };
@@ -218,6 +184,13 @@ export class LessonDialogComponent {
       this.busy.set(false);
     }
   }
+}
+
+function durationLabel(minutes: number): string {
+  if (minutes % 60 === 0) {
+    return `${minutes / 60} h`;
+  }
+  return minutes === 90 ? '1.5 h' : `${minutes} min`;
 }
 
 function roundToNextHour(): Date {

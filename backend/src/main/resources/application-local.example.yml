@@ -16,3 +16,13 @@ app:
   crypto:
     # generate: openssl rand -base64 32
     token-encryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
+  # Local-only conveniences (see docs/DECISIONS.md). Ignored under any other profile.
+  dev:
+    # fill an empty demo account on startup
+    seed-on-startup: true
+    # set to true to wipe and re-create the demo data on every restart (fresh dates)
+    reset-on-startup: false
+    email: dev.tutor@example.com
+    firstName: Dev
+    lastName: Tutor

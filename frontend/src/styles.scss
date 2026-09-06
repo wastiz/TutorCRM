@@ -1,10 +1,11 @@
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
   background: #fafafa;
 }
 
@@ -24,11 +25,47 @@ body {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 
   h1 {
     font-size: 22px;
     font-weight: 500;
     margin: 0;
+  }
+}
+
+/* Wide content (tables, calendars) scrolls inside its own box instead of
+   stretching the page — otherwise the whole layout scrolls sideways on a phone. */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 599px) {
+  .page {
+    padding: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 19px;
+  }
+
+  /* full-width action buttons read better than a cramped row on a phone */
+  .page-header .header-actions,
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .header-actions > * {
+    flex: 1 1 45%;
+  }
+
+  .mat-mdc-dialog-panel,
+  .mat-mdc-dialog-surface {
+    max-width: 96vw;
   }
 }
 
@@ -42,4 +79,21 @@ body {
 
 table.full-width {
   width: 100%;
+}
+
+/* Secondary columns are dropped on narrow screens; the table keeps
+   number / name / status, which is what a phone needs. */
+@media (max-width: 899px) {
+  .mat-column-subject,
+  .mat-column-format,
+  .mat-column-next {
+    display: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .mat-column-grade,
+  .mat-column-price {
+    display: none;
+  }
 }

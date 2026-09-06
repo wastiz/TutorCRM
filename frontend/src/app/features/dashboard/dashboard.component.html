@@ -1,0 +1,122 @@
+<div class="page">
+  <div class="page-header"><h1>Dashboard</h1></div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (data(); as d) {
+    <div class="tiles">
+      <div class="tile">
+        <mat-icon>group</mat-icon>
+        <span class="value">{{ d.activeStudents }}</span>
+        <span class="label">Active students</span>
+      </div>
+      <div class="tile">
+        <mat-icon>today</mat-icon>
+        <span class="value">{{ d.todaysLessons }}</span>
+        <span class="label">Lessons today</span>
+      </div>
+      <div class="tile">
+        <mat-icon>date_range</mat-icon>
+        <span class="value">{{ d.thisWeekLessons }}</span>
+        <span class="label">Lessons this week</span>
+      </div>
+      <div class="tile">
+        <mat-icon>check_circle</mat-icon>
+        <span class="value">{{ d.thisMonthCompletedLessons }}</span>
+        <span class="label">Completed this month</span>
+      </div>
+      <div class="tile accent">
+        <mat-icon>payments</mat-icon>
+        <span class="value">€{{ d.thisMonthExpectedEarnings | number: '1.0-2' }}</span>
+        <span class="label">Expected earnings (this month)</span>
+      </div>
+      <div class="tile">
+        <mat-icon>savings</mat-icon>
+        <span class="value">€{{ d.thisMonthEarnings | number: '1.0-2' }}</span>
+        <span class="label">Earned so far this month</span>
+      </div>
+    </div>
+
+    <mat-card class="today">
+      <mat-card-header>
+        <mat-card-title>Today</mat-card-title>
+        <mat-card-subtitle>{{ today() | date: 'EEEE d MMMM' }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (d.todaysLessonList.length) {
+          <ul class="today-list">
+            @for (l of d.todaysLessonList; track l.id) {
+              <li class="today-row" [class.done]="l.status !== 'PLANNED'">
+                <span class="time">{{ l.startTime | date: 'HH:mm' }}</span>
+                <span class="who">
+                  <a [routerLink]="['/students', l.studentId]">{{ l.studentName }}</a>
+                  <small>{{ durationLabel(l) }} · €{{ l.price }}</small>
+                </span>
+                @if (l.status === 'PLANNED') {
+                  <span class="row-actions">
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      [disabled]="busyLesson() === l.id"
+                      (click)="mark(l, 'complete')"
+                    >
+                      <mat-icon>check</mat-icon>
+                      Took place
+                    </button>
+                    <button
+                      mat-stroked-button
+                      [disabled]="busyLesson() === l.id"
+                      matTooltip="Student did not show up — the calendar event is deleted"
+                      (click)="mark(l, 'no-show')"
+                    >
+                      <mat-icon>person_off</mat-icon>
+                      No show
+                    </button>
+                    <button
+                      mat-button
+                      [disabled]="busyLesson() === l.id"
+                      matTooltip="Lesson cancelled — the calendar event is deleted"
+                      (click)="mark(l, 'cancel')"
+                    >
+                      Cancel
+                    </button>
+                  </span>
+                } @else {
+                  <span class="status" [class]="l.status.toLowerCase()">
+                    {{ statusLabel(l.status) }}
+                    <button mat-button (click)="mark(l, 'undo')">Undo</button>
+                  </span>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">No lessons today.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="upcoming">
+      <mat-card-header><mat-card-title>Upcoming lessons</mat-card-title></mat-card-header>
+      <mat-card-content>
+        @if (d.upcomingLessons.length) {
+          <mat-list>
+            @for (l of d.upcomingLessons; track l.id) {
+              <mat-list-item>
+                <span matListItemTitle>
+                  <a [routerLink]="['/students', l.studentId]">{{ l.studentName }}</a>
+                </span>
+                <span matListItemLine>
+                  {{ l.startTime | date: 'EEE d MMM, HH:mm' }} – {{ l.endTime | date: 'HH:mm' }} ·
+                  €{{ l.price }}
+                </span>
+              </mat-list-item>
+            }
+          </mat-list>
+        } @else {
+          <p class="muted">Nothing scheduled. Add lessons from a student or the calendar.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

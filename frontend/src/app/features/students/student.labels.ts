@@ -33,3 +33,19 @@ export function statusLabel(value: StudentStatus | null | undefined): string {
 export function dayLabel(value: DayOfWeek | null | undefined): string {
   return value ? DAY[value] : '—';
 }
+
+/**
+ * Link to a Telegram chat. The username is stored bare, but a value pasted as
+ * "@name" or a full t.me link is tolerated here too so old rows keep working.
+ */
+export function telegramUrl(handle: string | null | undefined): string | null {
+  if (!handle) {
+    return null;
+  }
+  const bare = handle
+    .trim()
+    .replace(/^(https?:\/\/)?(t(elegram)?\.me|telegram\.dog)\//i, '')
+    .replace(/^@/, '')
+    .split('?')[0];
+  return bare ? `https://t.me/${bare}` : null;
+}

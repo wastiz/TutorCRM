@@ -9,22 +9,7 @@ import { StudentService } from './student.service';
 @Component({
   selector: 'app-student-edit',
   imports: [StudentFormComponent, MatProgressBarModule],
-  template: `
-    <div class="page">
-      <div class="page-header"><h1>Edit student</h1></div>
-      @if (loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      } @else if (student()) {
-        <app-student-form
-          [value]="student()!"
-          submitLabel="Save changes"
-          [busy]="busy()"
-          (save)="save($event)"
-          (cancelled)="cancel()"
-        />
-      }
-    </div>
-  `,
+  templateUrl: './student-edit.component.html',
 })
 export class StudentEditComponent implements OnInit {
   private readonly service = inject(StudentService);

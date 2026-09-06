@@ -14,5 +14,7 @@ public record DashboardDto(
         BigDecimal thisMonthEarnings,
         /** COMPLETED + still-PLANNED this month — what the tutor expects to be paid. */
         BigDecimal thisMonthExpectedEarnings,
+        /** Today's lessons in chronological order — the tutor marks each one off from here. */
+        List<LessonDto> todaysLessonList,
         List<LessonDto> upcomingLessons
 ) {}

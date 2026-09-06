@@ -8,13 +8,20 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmDialogComponent } from '../../core/ui/confirm-dialog.component';
+import { SendEmailDialogComponent } from '../email/send-email-dialog.component';
+import {
+  ArchiveStudentDialogComponent,
+  ArchiveStudentDialogData,
+  ArchiveStudentDialogResult,
+} from './archive-student-dialog.component';
 import { LessonDialogComponent, LessonDialogResult } from '../lessons/lesson-dialog.component';
 import { Lesson, LESSON_STATUS_LABEL, LessonStudentOverview } from '../lessons/lesson.model';
 import { LessonService } from '../lessons/lesson.service';
-import { dayLabel, formatLabel, statusLabel } from './student.labels';
+import { dayLabel, formatLabel, statusLabel, telegramUrl } from './student.labels';
 import { Student } from './student.model';
 import { StudentService } from './student.service';
 
@@ -31,165 +38,8 @@ import { StudentService } from './student.service';
     MatProgressBarModule,
     MatTooltipModule,
   ],
-  template: `
-    <div class="page">
-      @if (loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      } @else if (student(); as s) {
-        <div class="page-header">
-          <h1>#{{ s.studentNumber }} · {{ s.firstName }} {{ s.lastName }}</h1>
-          <div class="header-actions">
-            <button mat-flat-button color="primary" (click)="addLesson(s)">
-              <mat-icon>add</mat-icon> Add lesson
-            </button>
-            <a mat-stroked-button [routerLink]="['/students', s.id, 'edit']">
-              <mat-icon>edit</mat-icon> Edit
-            </a>
-            @if (s.status !== 'FINISHED') {
-              <button mat-stroked-button (click)="archive(s)"><mat-icon>archive</mat-icon> Archive</button>
-            }
-            <button mat-stroked-button color="warn" (click)="remove(s)">
-              <mat-icon>delete</mat-icon> Delete
-            </button>
-          </div>
-        </div>
-
-        @if (overview(); as o) {
-          <div class="stats">
-            <div class="stat"><span class="value">{{ o.completedThisMonth }}</span><span class="label">Completed this month</span></div>
-            <div class="stat"><span class="value">€{{ o.earningsThisMonth }}</span><span class="label">Earnings this month</span></div>
-            <div class="stat"><span class="value">€{{ o.earningsTotal }}</span><span class="label">Total earnings</span></div>
-          </div>
-        }
-
-        <div class="cards">
-          <mat-card>
-            <mat-card-header><mat-card-title>Student information</mat-card-title></mat-card-header>
-            <mat-card-content>
-              <dl>
-                <dt>Status</dt><dd>{{ statusLabel(s.status) }}</dd>
-                <dt>Email</dt><dd>{{ s.email || '—' }}</dd>
-                <dt>Phone</dt><dd>{{ s.phone || '—' }}</dd>
-                <dt>Isikukood</dt><dd>{{ s.isikukood || '—' }}</dd>
-                <dt>Age</dt><dd>{{ s.age ?? '—' }}</dd>
-                <dt>Grade</dt><dd>{{ s.grade ?? '—' }}</dd>
-                <dt>School</dt><dd>{{ s.school || '—' }}</dd>
-                <dt>Subject</dt><dd>{{ s.subject || '—' }}</dd>
-                <dt>Level</dt><dd>{{ s.level || '—' }}</dd>
-                <dt>Format</dt><dd>{{ formatLabel(s.lessonFormat) }}</dd>
-                <dt>Lesson price</dt><dd>{{ s.lessonPrice != null ? ('€' + s.lessonPrice) : '—' }}</dd>
-                <dt>Goal</dt><dd>{{ s.goal || '—' }}</dd>
-                <dt>Notes</dt><dd>{{ s.notes || '—' }}</dd>
-              </dl>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card>
-            <mat-card-header><mat-card-title>Schedule</mat-card-title></mat-card-header>
-            <mat-card-content>
-              @if (s.schedules.length) {
-                <ul class="plain">
-                  @for (row of s.schedules; track $index) {
-                    <li>
-                      {{ dayLabel(row.dayOfWeek) }}
-                      @if (row.startTime) { · {{ row.startTime }}–{{ row.endTime }} }
-                      @if (row.lessonsPerWeek) { · {{ row.lessonsPerWeek }}/week }
-                    </li>
-                  }
-                </ul>
-              } @else {
-                <p class="muted">No preferred schedule set.</p>
-              }
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card>
-            <mat-card-header><mat-card-title>Parent information</mat-card-title></mat-card-header>
-            <mat-card-content>
-              <dl>
-                <dt>Name</dt><dd>{{ s.parentName || '—' }}</dd>
-                <dt>Phone</dt><dd>{{ s.parentPhone || '—' }}</dd>
-                <dt>Secondary phone</dt><dd>{{ s.parentSecondaryPhone || '—' }}</dd>
-                <dt>Email</dt><dd>{{ s.parentEmail || '—' }}</dd>
-              </dl>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="span-2">
-            <mat-card-header><mat-card-title>Upcoming lessons</mat-card-title></mat-card-header>
-            <mat-card-content>
-              @if (overview()?.upcoming?.length) {
-                @for (l of overview()!.upcoming; track l.id) {
-                  <div class="lesson-row">
-                    <span>{{ l.startTime | date: 'EEE d MMM, HH:mm' }} – {{ l.endTime | date: 'HH:mm' }}</span>
-                    <span class="muted">€{{ l.price }}</span>
-                    @if (l.calendarSyncStatus === 'FAILED') {
-                      <button mat-icon-button matTooltip="Calendar sync failed — retry" (click)="retrySync(l)">
-                        <mat-icon color="warn">sync_problem</mat-icon>
-                      </button>
-                    } @else if (l.calendarSyncStatus === 'SYNCED') {
-                      <mat-icon class="synced" matTooltip="In Google Calendar">event_available</mat-icon>
-                    }
-                    <span class="spacer"></span>
-                    <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
-                    <mat-menu #menu="matMenu">
-                      <button mat-menu-item (click)="editLesson(l)"><mat-icon>edit</mat-icon> Edit</button>
-                      <button mat-menu-item (click)="mark(l, 'complete')"><mat-icon>check_circle</mat-icon> Mark completed</button>
-                      <button mat-menu-item (click)="mark(l, 'no-show')"><mat-icon>person_off</mat-icon> No show</button>
-                      <button mat-menu-item (click)="mark(l, 'cancel')"><mat-icon>cancel</mat-icon> Cancel</button>
-                      <button mat-menu-item (click)="repeat(l)"><mat-icon>repeat</mat-icon> Repeat weekly…</button>
-                    </mat-menu>
-                  </div>
-                }
-              } @else {
-                <p class="muted">No upcoming lessons.</p>
-              }
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="span-2">
-            <mat-card-header><mat-card-title>Past lessons</mat-card-title></mat-card-header>
-            <mat-card-content>
-              @if (overview()?.past?.length) {
-                @for (l of overview()!.past; track l.id) {
-                  <div class="lesson-row">
-                    <span>{{ l.startTime | date: 'EEE d MMM yyyy, HH:mm' }}</span>
-                    <span class="badge" [class]="'st-' + l.status.toLowerCase()">{{ lessonStatusLabel[l.status] }}</span>
-                    <span class="muted">€{{ l.price }}</span>
-                    <span class="spacer"></span>
-                    <button mat-button (click)="editLesson(l)">Edit</button>
-                  </div>
-                }
-              } @else {
-                <p class="muted">No past lessons.</p>
-              }
-            </mat-card-content>
-          </mat-card>
-        </div>
-      }
-    </div>
-  `,
-  styles: [
-    `
-      .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-      .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-      .span-2 { grid-column: 1 / -1; }
-      dl { display: grid; grid-template-columns: 130px 1fr; row-gap: 6px; margin: 0; }
-      dt { color: rgba(0, 0, 0, 0.55); }
-      ul.plain { margin: 0; padding-left: 18px; }
-      .stats { display: flex; gap: 16px; margin: 8px 0 20px; flex-wrap: wrap; }
-      .stat { background: #fff; border-radius: 8px; padding: 14px 20px; min-width: 160px; display: flex; flex-direction: column; }
-      .stat .value { font-size: 22px; font-weight: 600; }
-      .stat .label { font-size: 12px; color: rgba(0, 0, 0, 0.55); }
-      .lesson-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-      .spacer { flex: 1 1 auto; }
-      .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-      .st-completed { background: #e8f5e9; color: #2e7d32; }
-      .st-planned { background: #e8eaf6; color: #3949ab; }
-      .st-cancelled { background: #eceff1; color: #607d8b; }
-      .st-no_show { background: #ffebee; color: #c62828; }
-    `,
-  ],
+  templateUrl: './student-detail.component.html',
+  styleUrl: './student-detail.component.scss',
 })
 export class StudentDetailComponent implements OnInit {
   private readonly service = inject(StudentService);
@@ -197,14 +47,17 @@ export class StudentDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly snack = inject(MatSnackBar);
 
   readonly student = signal<Student | null>(null);
   readonly overview = signal<LessonStudentOverview | null>(null);
   readonly loading = signal(true);
+  readonly syncing = signal(false);
 
   readonly statusLabel = statusLabel;
   readonly formatLabel = formatLabel;
   readonly dayLabel = dayLabel;
+  readonly telegramUrl = telegramUrl;
   readonly lessonStatusLabel = LESSON_STATUS_LABEL;
 
   private get id(): string {
@@ -263,14 +116,66 @@ export class StudentDetailComponent implements OnInit {
     const raw = window.prompt('How many weekly lessons to add?', '4');
     const n = Number(raw);
     if (!Number.isFinite(n) || n < 1) return;
-    await firstValueFrom(this.lessonService.repeat(l.id, { occurrences: Math.floor(n), intervalWeeks: 1 }));
+    await firstValueFrom(
+      this.lessonService.repeat(l.id, { occurrences: Math.floor(n), intervalWeeks: 1 }),
+    );
     this.reloadLessons();
   }
 
+  /** Re-syncs just this student — handy after fixing a calendar permission or reconnecting Google. */
+  async syncCalendarForStudent(student: Student): Promise<void> {
+    this.syncing.set(true);
+    try {
+      const result = await firstValueFrom(this.lessonService.syncStudentCalendar(student.id));
+      if (!result.enabled) {
+        this.snack.open('Connect Google and pick a calendar in Settings first', 'Dismiss', {
+          duration: 6000,
+        });
+      } else {
+        const parts = [`${result.synced} synced`];
+        if (result.removed) parts.push(`${result.removed} removed`);
+        if (result.failed) parts.push(`${result.failed} failed`);
+        this.snack.open(parts.join(', '), 'Dismiss', { duration: 5000 });
+      }
+      this.reloadLessons();
+    } finally {
+      this.syncing.set(false);
+    }
+  }
+
+  /** Manual send: pick a template, review the rendered message, then send from Gmail. */
+  sendEmail(student: Student, lessonId?: string): void {
+    this.dialog
+      .open(SendEmailDialogComponent, {
+        data: {
+          studentId: student.id,
+          studentName: `${student.firstName} ${student.lastName}`,
+          lessonId,
+          defaultRecipient: student.email ?? student.parentEmail,
+        },
+        maxWidth: '90vw',
+      })
+      .afterClosed()
+      .subscribe((result) => {
+        if (result) {
+          this.snack.open(`Email sent to ${result.to}`, 'Dismiss', { duration: 5000 });
+        }
+      });
+  }
+
   async archive(s: Student): Promise<void> {
-    const ok = await this.confirm(`Archive ${s.firstName} ${s.lastName}?`, 'They will be marked as finished.');
-    if (!ok) return;
-    this.student.set(await firstValueFrom(this.service.archive(s.id)));
+    const result = await firstValueFrom(
+      this.dialog
+        .open<ArchiveStudentDialogComponent, ArchiveStudentDialogData, ArchiveStudentDialogResult>(
+          ArchiveStudentDialogComponent,
+          {
+            data: { studentName: `${s.firstName} ${s.lastName}`, reason: s.leaveReason },
+          },
+        )
+        .afterClosed(),
+    );
+    if (!result) return;
+    this.student.set(await firstValueFrom(this.service.archive(s.id, result.reason)));
   }
 
   async remove(s: Student): Promise<void> {
@@ -282,7 +187,9 @@ export class StudentDetailComponent implements OnInit {
 
   private confirm(title: string, message: string): Promise<boolean> {
     return firstValueFrom(
-      this.dialog.open(ConfirmDialogComponent, { data: { title, message }, width: '420px' }).afterClosed(),
+      this.dialog
+        .open(ConfirmDialogComponent, { data: { title, message }, width: '420px' })
+        .afterClosed(),
     ).then((v) => v === true);
   }
 }

@@ -70,7 +70,7 @@ public class LessonImportService {
                     e.eventId(), e.calendarId(), e.summary(), e.start(), e.end(),
                     guess == null ? null : guess.getId(),
                     guess == null ? null : fullName(guess),
-                    guess == null ? null : guess.getLessonPrice()));
+                    guess == null ? null : LessonPricing.priceFor(guess.getLessonPrice(), e.start(), e.end())));
         }
 
         return new GoogleImportDto.Preview(true, from, to, newEvents, moved, alreadyLinked);
@@ -102,7 +102,7 @@ public class LessonImportService {
             Lesson lesson = Lesson.create(userId, student.getId());
             lesson.setStartTime(e.start());
             lesson.setEndTime(e.end());
-            lesson.setPrice(resolvePrice(item.price(), student));
+            lesson.setPrice(resolvePrice(item.price(), student, e.start(), e.end()));
             lesson.setStatus(LessonStatus.PLANNED);
             lesson.setNotes(StringUtils.hasText(e.description()) ? e.description().strip() : null);
             lesson.setGoogleCalendarId(calendarId);
@@ -195,14 +195,16 @@ public class LessonImportService {
         return s == null ? "" : s.toLowerCase(Locale.ROOT);
     }
 
-    private static java.math.BigDecimal resolvePrice(java.math.BigDecimal requested, Student student) {
+    private static java.math.BigDecimal resolvePrice(java.math.BigDecimal requested, Student student,
+                                                     OffsetDateTime start, OffsetDateTime end) {
         if (requested != null) {
             return requested;
         }
-        if (student.getLessonPrice() != null) {
-            return student.getLessonPrice();
+        java.math.BigDecimal computed = LessonPricing.priceFor(student.getLessonPrice(), start, end);
+        if (computed != null) {
+            return computed;
         }
         throw ApiException.badRequest("LESSON_PRICE_REQUIRED",
-                "No price given and " + student.getFirstName() + " has no default lesson price");
+                "No price given and " + student.getFirstName() + " has no lesson rate");
     }
 }

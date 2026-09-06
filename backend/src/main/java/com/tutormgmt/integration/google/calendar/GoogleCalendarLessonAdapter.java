@@ -2,6 +2,7 @@ package com.tutormgmt.integration.google.calendar;
 
 import com.tutormgmt.authentication.AuthenticationService;
 import com.tutormgmt.lesson.LessonCalendarGateway;
+import com.tutormgmt.lesson.LessonPricing;
 import com.tutormgmt.settings.UserSettings;
 import com.tutormgmt.settings.UserSettingsRepository;
 import java.util.Optional;
@@ -62,27 +63,32 @@ public class GoogleCalendarLessonAdapter implements LessonCalendarGateway {
                 .filter(id -> id != null && !id.isBlank());
     }
 
+    /**
+     * Title carries the student and the lesson length. The price is deliberately absent —
+     * a shared calendar should not show what the tutor is paid (owner request, 2026-09-05).
+     */
     private static String summary(LessonSyncCommand cmd) {
         String name = cmd.studentName() == null || cmd.studentName().isBlank() ? "Lesson" : cmd.studentName();
-        String prefix = switch (cmd.status()) {
-            case CANCELLED -> "(Cancelled) ";
-            case NO_SHOW -> "(No-show) ";
-            case COMPLETED -> "";
-            case PLANNED -> "";
-        };
-        return prefix + "Lesson · " + name;
+        return "Lesson · " + name + " · " + durationLabel(cmd);
     }
 
     private static String description(LessonSyncCommand cmd) {
         StringBuilder sb = new StringBuilder();
-        if (cmd.price() != null) {
-            sb.append("Price: €").append(cmd.price()).append('\n');
-        }
+        sb.append("Duration: ").append(durationLabel(cmd)).append('\n');
         sb.append("Status: ").append(cmd.status()).append('\n');
         if (cmd.notes() != null && !cmd.notes().isBlank()) {
             sb.append('\n').append(cmd.notes());
         }
         sb.append("\n\n— created by tutor-management");
         return sb.toString();
+    }
+
+    /** "1 h", "1.5 h" or "45 min". */
+    static String durationLabel(LessonSyncCommand cmd) {
+        long minutes = LessonPricing.minutesBetween(cmd.start(), cmd.end());
+        if (minutes % 60 == 0) {
+            return (minutes / 60) + " h";
+        }
+        return minutes == 90 ? "1.5 h" : minutes + " min";
     }
 }

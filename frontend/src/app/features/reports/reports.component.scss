@@ -1,0 +1,39 @@
+.title {
+  margin: 4px 0 12px;
+}
+table.report {
+  width: 100%;
+  background: #fff;
+}
+.num {
+  text-align: right;
+}
+td.mat-mdc-footer-cell,
+th.mat-mdc-footer-cell {
+  font-weight: 700;
+}
+.banner {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.banner ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.banner.warn {
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+}
+.banner.error {
+  background: #ffebee;
+  border: 1px solid #ef9a9a;
+}
+.actions {
+  margin-top: 20px;
+}
+.empty {
+  margin-top: 24px;
+}

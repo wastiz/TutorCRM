@@ -1,0 +1,26 @@
+mat-card {
+  margin-bottom: 16px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.row mat-icon.ok {
+  color: #2e7d32;
+}
+.spacer {
+  flex: 1 1 auto;
+}
+.wide {
+  width: 100%;
+  display: block;
+}
+.small {
+  font-size: 12px;
+}
+mat-checkbox {
+  display: block;
+  margin: 8px 0 12px;
+}

@@ -39,6 +39,14 @@ export class AuthService {
     window.location.href = `${environment.apiBaseUrl}/oauth2/authorization/google`;
   }
 
+  /**
+   * Signs in as the seeded demo tutor. The endpoint only exists when the backend runs with the
+   * `local` profile; the button that calls this is hidden in production builds.
+   */
+  loginAsDevTutor(): void {
+    window.location.href = `${environment.apiBaseUrl}/dev/login`;
+  }
+
   async logout(): Promise<void> {
     try {
       await firstValueFrom(this.http.post(`${environment.apiBaseUrl}/api/auth/logout`, {}));

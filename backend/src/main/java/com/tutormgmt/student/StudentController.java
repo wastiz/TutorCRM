@@ -59,8 +59,9 @@ public class StudentController {
     }
 
     @PostMapping("/{id}/archive")
-    public StudentDto archive(@AuthenticationPrincipal AppPrincipal principal, @PathVariable UUID id) {
-        return service.archive(principal.userId(), id);
+    public StudentDto archive(@AuthenticationPrincipal AppPrincipal principal, @PathVariable UUID id,
+                              @RequestBody(required = false) ArchiveStudentRequest request) {
+        return service.archive(principal.userId(), id, request == null ? null : request.leaveReason());
     }
 
     @PostMapping("/duplicates")

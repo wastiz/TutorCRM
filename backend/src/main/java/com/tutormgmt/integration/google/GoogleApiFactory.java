@@ -7,6 +7,8 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.gmail.Gmail;
+import com.google.api.services.gmail.GmailScopes;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.auth.http.HttpCredentialsAdapter;
@@ -60,6 +62,11 @@ public class GoogleApiFactory {
                 .setApplicationName(APPLICATION_NAME).build();
     }
 
+    public Gmail gmail(UUID userId) {
+        return new Gmail.Builder(transport, JSON, adapter(userId))
+                .setApplicationName(APPLICATION_NAME).build();
+    }
+
     public Drive drive(UUID userId) {
         return new Drive.Builder(transport, JSON, adapter(userId))
                 .setApplicationName(APPLICATION_NAME).build();
@@ -68,7 +75,8 @@ public class GoogleApiFactory {
     /** Scopes we ask for at login (kept here for reference / re-consent checks). */
     public static List<String> requiredScopes() {
         return List.of("openid", "email", "profile",
-                CalendarScopes.CALENDAR, SheetsScopes.SPREADSHEETS, DriveScopes.DRIVE_METADATA_READONLY);
+                CalendarScopes.CALENDAR, SheetsScopes.SPREADSHEETS, DriveScopes.DRIVE_METADATA_READONLY,
+                GmailScopes.GMAIL_SEND);
     }
 
     private HttpCredentialsAdapter adapter(UUID userId) {

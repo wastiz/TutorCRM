@@ -1,10 +1,16 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { LESSON_STATUS_LABEL, Lesson, LessonStatus } from '../lessons/lesson.model';
+import { LessonService } from '../lessons/lesson.service';
 import { Dashboard } from './dashboard.model';
 import { DashboardService } from './dashboard.service';
 
@@ -14,118 +20,73 @@ import { DashboardService } from './dashboard.service';
     RouterLink,
     DatePipe,
     DecimalPipe,
+    MatButtonModule,
     MatCardModule,
     MatIconModule,
     MatListModule,
     MatProgressBarModule,
+    MatTooltipModule,
   ],
-  template: `
-    <div class="page">
-      <div class="page-header"><h1>Dashboard</h1></div>
-
-      @if (loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      } @else if (data(); as d) {
-        <div class="tiles">
-          <div class="tile">
-            <mat-icon>group</mat-icon>
-            <span class="value">{{ d.activeStudents }}</span>
-            <span class="label">Active students</span>
-          </div>
-          <div class="tile">
-            <mat-icon>today</mat-icon>
-            <span class="value">{{ d.todaysLessons }}</span>
-            <span class="label">Lessons today</span>
-          </div>
-          <div class="tile">
-            <mat-icon>date_range</mat-icon>
-            <span class="value">{{ d.thisWeekLessons }}</span>
-            <span class="label">Lessons this week</span>
-          </div>
-          <div class="tile">
-            <mat-icon>check_circle</mat-icon>
-            <span class="value">{{ d.thisMonthCompletedLessons }}</span>
-            <span class="label">Completed this month</span>
-          </div>
-          <div class="tile accent">
-            <mat-icon>payments</mat-icon>
-            <span class="value">€{{ d.thisMonthExpectedEarnings | number: '1.0-2' }}</span>
-            <span class="label">Expected earnings (this month)</span>
-          </div>
-          <div class="tile">
-            <mat-icon>savings</mat-icon>
-            <span class="value">€{{ d.thisMonthEarnings | number: '1.0-2' }}</span>
-            <span class="label">Earned so far this month</span>
-          </div>
-        </div>
-
-        <mat-card class="upcoming">
-          <mat-card-header><mat-card-title>Upcoming lessons</mat-card-title></mat-card-header>
-          <mat-card-content>
-            @if (d.upcomingLessons.length) {
-              <mat-list>
-                @for (l of d.upcomingLessons; track l.id) {
-                  <mat-list-item>
-                    <span matListItemTitle>
-                      <a [routerLink]="['/students', l.studentId]">{{ l.studentName }}</a>
-                    </span>
-                    <span matListItemLine>
-                      {{ l.startTime | date: 'EEE d MMM, HH:mm' }} – {{ l.endTime | date: 'HH:mm' }} · €{{ l.price }}
-                    </span>
-                  </mat-list-item>
-                }
-              </mat-list>
-            } @else {
-              <p class="muted">Nothing scheduled. Add lessons from a student or the calendar.</p>
-            }
-          </mat-card-content>
-        </mat-card>
-      }
-    </div>
-  `,
-  styles: [
-    `
-      .tiles {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-      }
-      .tile {
-        background: #fff;
-        border-radius: 10px;
-        padding: 18px 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-      .tile mat-icon {
-        color: rgba(0, 0, 0, 0.4);
-      }
-      .tile .value {
-        font-size: 26px;
-        font-weight: 600;
-      }
-      .tile .label {
-        font-size: 12px;
-        color: rgba(0, 0, 0, 0.55);
-      }
-      .tile.accent {
-        background: #e8eaf6;
-      }
-      .upcoming a {
-        text-decoration: none;
-      }
-    `,
-  ],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
   private readonly service = inject(DashboardService);
+  private readonly lessons = inject(LessonService);
+  private readonly snack = inject(MatSnackBar);
 
   readonly data = signal<Dashboard | null>(null);
   readonly loading = signal(true);
+  readonly busyLesson = signal<string | null>(null);
+  readonly today = signal(new Date());
+
+  readonly statusLabel = (s: LessonStatus) => LESSON_STATUS_LABEL[s];
 
   ngOnInit(): void {
+    this.reload();
+  }
+
+  durationLabel(lesson: Lesson): string {
+    const minutes = Math.round(
+      (new Date(lesson.endTime).getTime() - new Date(lesson.startTime).getTime()) / 60000,
+    );
+    return minutes % 60 === 0 ? `${minutes / 60} h` : `${minutes} min`;
+  }
+
+  /** Mark a lesson off; a lesson that did not happen also loses its Google Calendar event. */
+  async mark(lesson: Lesson, action: 'complete' | 'no-show' | 'cancel' | 'undo'): Promise<void> {
+    this.busyLesson.set(lesson.id);
+    try {
+      const updated = await firstValueFrom(
+        action === 'complete'
+          ? this.lessons.complete(lesson.id)
+          : action === 'no-show'
+            ? this.lessons.noShow(lesson.id)
+            : action === 'cancel'
+              ? this.lessons.cancel(lesson.id)
+              : this.lessons.replan(lesson.id),
+      );
+      this.patchLesson(updated);
+      if (action === 'no-show' || action === 'cancel') {
+        this.snack.open('Lesson removed from the calendar', 'Dismiss', { duration: 4000 });
+      }
+    } finally {
+      this.busyLesson.set(null);
+    }
+  }
+
+  private patchLesson(updated: Lesson): void {
+    const current = this.data();
+    if (!current) return;
+    this.data.set({
+      ...current,
+      todaysLessonList: current.todaysLessonList.map((l) => (l.id === updated.id ? updated : l)),
+    });
+    // the tiles (earnings, completed count) depend on the change too
+    this.service.summary().subscribe((d) => this.data.set(d));
+  }
+
+  private reload(): void {
     this.service.summary().subscribe({
       next: (d) => {
         this.data.set(d);

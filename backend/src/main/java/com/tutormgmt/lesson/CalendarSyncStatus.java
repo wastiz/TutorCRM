@@ -9,5 +9,10 @@ public enum CalendarSyncStatus {
     /** Last sync attempt failed; the user can retry. */
     FAILED,
     /** Deliberately not synced (Google not connected / user opted out). */
-    DISABLED
+    DISABLED,
+    /**
+     * The lesson did not happen (cancelled / no-show) and its calendar event was deleted,
+     * so the slot is free again in Google Calendar.
+     */
+    REMOVED
 }
