@@ -49,9 +49,9 @@ class EmailServiceIT extends AbstractPostgresIT {
         userId = userRepository.save(User.create("sub-" + UUID.randomUUID(), "tutor@x.ee", "Anna", "Tutor"))
                 .getId();
         StudentDto s = studentService.create(userId, StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("kirill@x.ee")
+                .firstName("Maksim").lastName("Ivanov").email("maksim@x.ee")
                 .subject("Эстонский язык").lessonPrice(new BigDecimal("20.00"))
-                .parentName("Liudmila").parentEmail("mom@x.ee")
+                .parentName("Natalia").parentEmail("mom@x.ee")
                 .schedules(List.of()).build());
         studentId = s.id();
     }
@@ -76,9 +76,9 @@ class EmailServiceIT extends AbstractPostgresIT {
         EmailDto.PreviewDto preview = emailService.preview(userId,
                 new EmailDto.SendRequest(template.id(), studentId, null, null, null, null));
 
-        assertThat(preview.to()).isEqualTo("kirill@x.ee");
+        assertThat(preview.to()).isEqualTo("maksim@x.ee");
         assertThat(preview.subject()).isEqualTo("Эстонский язык");
-        assertThat(preview.body()).isEqualTo("Здравствуйте, Kirill! Ставка 20.00 €. Anna Tutor");
+        assertThat(preview.body()).isEqualTo("Здравствуйте, Maksim! Ставка 20.00 €. Anna Tutor");
         assertThat(preview.unresolvedPlaceholders()).isEmpty();
         assertThat(sender.sent).isEmpty();
     }
@@ -91,17 +91,17 @@ class EmailServiceIT extends AbstractPostgresIT {
         EmailDto.SendResultDto result = emailService.send(userId,
                 new EmailDto.SendRequest(template.id(), studentId, null, null, null, null));
 
-        assertThat(result.to()).isEqualTo("kirill@x.ee");
+        assertThat(result.to()).isEqualTo("maksim@x.ee");
         assertThat(sender.sent).singleElement().satisfies(m -> {
-            assertThat(m.to()).isEqualTo("kirill@x.ee");
-            assertThat(m.body()).isEqualTo("Привет, Kirill");
+            assertThat(m.to()).isEqualTo("maksim@x.ee");
+            assertThat(m.body()).isEqualTo("Привет, Maksim");
         });
     }
 
     @Test
     void fallsBackToTheParentAddressAndWarnsAboutIt() {
         StudentDto noEmail = studentService.create(userId, StudentRequest.builder()
-                .firstName("Artjom").lastName("Zimin").email("artjom@x.ee")
+                .firstName("Denis").lastName("Sokolov").email("denis@x.ee")
                 .parentEmail("julia@x.ee").schedules(List.of()).ignoreDuplicates(true).build());
         studentRepository.findById(noEmail.id()).ifPresent(s -> {
             s.setEmail(null);

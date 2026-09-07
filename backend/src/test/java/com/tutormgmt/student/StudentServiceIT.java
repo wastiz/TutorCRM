@@ -53,8 +53,8 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void assignsSequentialStudentNumbersPerUser() {
-        StudentDto a = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
-        StudentDto b = service.create(userId, request("Artjom", "Zimin", "z@x.ee", "222"));
+        StudentDto a = service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
+        StudentDto b = service.create(userId, request("Denis", "Sokolov", "z@x.ee", "222"));
         StudentDto forOther = service.create(otherUserId, request("Other", "One", "o@x.ee", "999"));
 
         assertThat(a.studentNumber()).isEqualTo("1");
@@ -64,7 +64,7 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void persistsSchedulesAsRows() {
-        StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
+        StudentDto created = service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
 
         StudentDto loaded = service.get(userId, created.id());
         assertThat(loaded.schedules()).singleElement().satisfies(s -> {
@@ -76,25 +76,25 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void detectsDuplicatesByEmailPhoneAndName() {
-        service.create(userId, request("Kirill", "Tsarenkov", "dup@x.ee", "5350"));
+        service.create(userId, request("Maksim", "Ivanov", "dup@x.ee", "5350"));
 
         assertThat(service.findDuplicates(userId, new DuplicateCheckRequest("dup@x.ee", null, null, null))).hasSize(1);
         assertThat(service.findDuplicates(userId, new DuplicateCheckRequest(null, "5350", null, null))).hasSize(1);
-        assertThat(service.findDuplicates(userId, new DuplicateCheckRequest(null, null, "kirill", "tsarenkov"))).hasSize(1);
+        assertThat(service.findDuplicates(userId, new DuplicateCheckRequest(null, null, "maksim", "ivanov"))).hasSize(1);
         assertThat(service.findDuplicates(userId, new DuplicateCheckRequest("nope@x.ee", null, null, null))).isEmpty();
     }
 
     @Test
     void createRejectsDuplicateUnlessIgnored() {
-        service.create(userId, request("Kirill", "Tsarenkov", "dup@x.ee", "5350"));
-        StudentRequest again = request("Kirill", "Tsarenkov", "dup@x.ee", "5350");
+        service.create(userId, request("Maksim", "Ivanov", "dup@x.ee", "5350"));
+        StudentRequest again = request("Maksim", "Ivanov", "dup@x.ee", "5350");
 
         assertThatThrownBy(() -> service.create(userId, again))
                 .isInstanceOf(ApiException.class)
                 .satisfies(e -> assertThat(((ApiException) e).getCode()).isEqualTo("POSSIBLE_DUPLICATE"));
 
         StudentRequest forced = StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("dup@x.ee").phone("5350")
+                .firstName("Maksim").lastName("Ivanov").email("dup@x.ee").phone("5350")
                 .schedules(List.of()).ignoreDuplicates(true).build();
         assertThat(service.create(userId, forced).studentNumber()).isEqualTo("2");
     }
@@ -118,10 +118,10 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void updateReplacesSchedulesAndFields() {
-        StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
+        StudentDto created = service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
 
         StudentRequest update = StudentRequest.builder()
-                .firstName("Kirill").lastName("Tsarenkov").email("k@x.ee").phone("111")
+                .firstName("Maksim").lastName("Ivanov").email("k@x.ee").phone("111")
                 .isikukood("39001010001").age(15).grade(10).school("New School").subject("Physics")
                 .goal("new goal").level("intermediate").notes("note").lessonFormat(LessonFormat.BOTH)
                 .lessonPrice(new BigDecimal("25.00")).status(StudentStatus.PAUSED)
@@ -143,7 +143,7 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void archiveSetsFinishedAndEndDate() {
-        StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
+        StudentDto created = service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
 
         StudentDto archived = service.archive(userId, created.id(), null);
 
@@ -153,7 +153,7 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void deleteRemovesStudentAndSchedules() {
-        StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
+        StudentDto created = service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
 
         service.delete(userId, created.id());
 
@@ -162,7 +162,7 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void oneUserCannotSeeAnothersStudent() {
-        StudentDto created = service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
+        StudentDto created = service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
 
         assertThatThrownBy(() -> service.get(otherUserId, created.id()))
                 .isInstanceOf(ApiException.class);
@@ -170,11 +170,11 @@ class StudentServiceIT extends AbstractPostgresIT {
 
     @Test
     void listFiltersBySearchAndStatus() {
-        service.create(userId, request("Kirill", "Tsarenkov", "k@x.ee", "111"));
-        StudentDto artjom = service.create(userId, request("Artjom", "Zimin", "z@x.ee", "222"));
-        service.archive(userId, artjom.id(), null);
+        service.create(userId, request("Maksim", "Ivanov", "k@x.ee", "111"));
+        StudentDto denis = service.create(userId, request("Denis", "Sokolov", "z@x.ee", "222"));
+        service.archive(userId, denis.id(), null);
 
-        assertThat(service.list(userId, "tsar", null)).hasSize(1);
+        assertThat(service.list(userId, "ivan", null)).hasSize(1);
         assertThat(service.list(userId, null, StudentStatus.ACTIVE)).hasSize(1);
         assertThat(service.list(userId, null, StudentStatus.FINISHED)).hasSize(1);
         assertThat(service.list(userId, null, null)).hasSize(2);

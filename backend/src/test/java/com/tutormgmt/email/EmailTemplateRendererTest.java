@@ -15,10 +15,10 @@ class EmailTemplateRendererTest {
                 "Урок {{lesson.date}}",
                 "Здравствуйте, {{student.firstName}}! Ждём Вас в {{lesson.time}}.",
                 Map.of("lesson.date", "10.09.2026", "lesson.time", "17:00",
-                        "student.firstName", "Kirill"));
+                        "student.firstName", "Maksim"));
 
         assertThat(r.subject()).isEqualTo("Урок 10.09.2026");
-        assertThat(r.body()).isEqualTo("Здравствуйте, Kirill! Ждём Вас в 17:00.");
+        assertThat(r.body()).isEqualTo("Здравствуйте, Maksim! Ждём Вас в 17:00.");
         assertThat(r.unresolvedPlaceholders()).isEmpty();
     }
 

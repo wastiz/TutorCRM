@@ -62,7 +62,7 @@ class StudentApiIT extends AbstractPostgresIT {
     @Test
     void createsListsAndFetchesStudent() throws Exception {
         String body = """
-                {"firstName":"Kirill","lastName":"Tsarenkov","email":"k@x.ee","lessonPrice":20,
+                {"firstName":"Maksim","lastName":"Ivanov","email":"k@x.ee","lessonPrice":20,
                  "schedules":[{"dayOfWeek":"THURSDAY","startTime":"17:00","endTime":"18:00","lessonsPerWeek":1}]}
                 """;
 
@@ -75,12 +75,12 @@ class StudentApiIT extends AbstractPostgresIT {
         mvc.perform(get("/api/students").with(asUser()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].fullName").value("Kirill Tsarenkov"));
+                .andExpect(jsonPath("$[0].fullName").value("Maksim Ivanov"));
     }
 
     @Test
     void duplicateCreateReturns409WithCandidates() throws Exception {
-        String body = "{\"firstName\":\"Kirill\",\"lastName\":\"Tsarenkov\",\"email\":\"dup@x.ee\",\"schedules\":[]}";
+        String body = "{\"firstName\":\"Maksim\",\"lastName\":\"Ivanov\",\"email\":\"dup@x.ee\",\"schedules\":[]}";
         mvc.perform(post("/api/students").with(asUser()).contentType("application/json").content(body))
                 .andExpect(status().isCreated());
 
@@ -120,18 +120,18 @@ class StudentApiIT extends AbstractPostgresIT {
 
     @Test
     void parsesRawMessage() throws Exception {
-        String raw = String.join("\t", "Kirill Tsarenkov", "ljulap@gmail.com", "5350 6894", "14", "9",
+        String raw = String.join("\t", "Maksim Ivanov", "maksim.ivanov@example.com", "5555 0101", "14", "9",
                 "Tlvl", "Эстонский язык", "goal", "ЧЕТВЕРГ", "17-20", "2", "оба варианта подходят",
-                "", "Liudmila Lapshina", "", "51109180029", "47808060232");
+                "", "Natalia Ivanova", "", "51109180007", "47808060003");
         String body = json.writeValueAsString(java.util.Map.of("rawText", raw));
 
         mvc.perform(post("/api/students/import/parse").with(asUser())
                         .contentType("application/json").content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.student.firstName").value("Kirill"))
+                .andExpect(jsonPath("$.student.firstName").value("Maksim"))
                 .andExpect(jsonPath("$.student.lessonFormat").value("BOTH"))
-                .andExpect(jsonPath("$.student.isikukood").value("51109180029"))
-                .andExpect(jsonPath("$.student.parentIsikukood").value("47808060232"))
+                .andExpect(jsonPath("$.student.isikukood").value("51109180007"))
+                .andExpect(jsonPath("$.student.parentIsikukood").value("47808060003"))
                 .andExpect(jsonPath("$.warnings", hasSize(0)));
     }
 }

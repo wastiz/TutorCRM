@@ -13,24 +13,24 @@ class TabStudentImportParserTest {
     private final TabStudentImportParser parser = new TabStudentImportParser();
 
     @Nested
-    class RealExamples {
+    class SpecExamples {
 
         /** CLAUDE.md section 58. */
         @Test
-        void kirillTsarenkov() {
-            String raw = "Kirill Tsarenkov\tljulap@gmail.com\t5350 6894\t14\t9\tTlvl\tЭстонский язык\t"
+        void maksimIvanov() {
+            String raw = "Maksim Ivanov\tmaksim.ivanov@example.com\t5555 0101\t14\t9\tTlvl\tЭстонский язык\t"
                     + "Слабый, особенно речь,нужна подготовка к экзамену \tЧЕТВЕРГ\t17-20\t2\t"
-                    + "оба варианта подходят\t\tLiudmila Lapshina \t\t51109180029\t47808060232";
+                    + "оба варианта подходят\t\tNatalia Ivanova \t\t51109180007\t47808060003";
 
             StudentImportPreviewDto preview = parser.parse(raw);
             ImportedStudentDto s = preview.student();
 
             assertThat(preview.fieldCount()).isEqualTo(17);
             assertThat(preview.warnings()).isEmpty();
-            assertThat(s.firstName()).isEqualTo("Kirill");
-            assertThat(s.lastName()).isEqualTo("Tsarenkov");
-            assertThat(s.email()).isEqualTo("ljulap@gmail.com");
-            assertThat(s.phone()).isEqualTo("5350 6894");
+            assertThat(s.firstName()).isEqualTo("Maksim");
+            assertThat(s.lastName()).isEqualTo("Ivanov");
+            assertThat(s.email()).isEqualTo("maksim.ivanov@example.com");
+            assertThat(s.phone()).isEqualTo("5555 0101");
             assertThat(s.age()).isEqualTo(14);
             assertThat(s.grade()).isEqualTo(9);
             assertThat(s.school()).isEqualTo("Tlvl");
@@ -41,11 +41,11 @@ class TabStudentImportParserTest {
             assertThat(s.preferredTimeTo()).isEqualTo("20:00");
             assertThat(s.lessonsPerWeek()).isEqualTo(2);
             assertThat(s.lessonFormat()).isEqualTo(LessonFormat.BOTH);
-            assertThat(s.parentName()).isEqualTo("Liudmila Lapshina");
+            assertThat(s.parentName()).isEqualTo("Natalia Ivanova");
             // the two 11-digit values are personal codes, not phone numbers: the student's own
             // (born 2011-09-18 — matches age 14) and the parent's (born 1978-08-06)
-            assertThat(s.isikukood()).isEqualTo("51109180029");
-            assertThat(s.parentIsikukood()).isEqualTo("47808060232");
+            assertThat(s.isikukood()).isEqualTo("51109180007");
+            assertThat(s.parentIsikukood()).isEqualTo("47808060003");
             assertThat(s.parentPhone()).isNull();
             assertThat(s.parentSecondaryPhone()).isNull();
             assertThat(s.schedules()).singleElement().satisfies(e -> {
@@ -58,18 +58,18 @@ class TabStudentImportParserTest {
 
         /** CLAUDE.md section 57 — empty time, stray leading comma, "онлайн". */
         @Test
-        void artjomZimin() {
-            String raw = "Artjom Zimin\tartemzimin171@gmail.com\t58170531\t18\t12\tTTG\tМатематика\t"
+        void denisSokolov() {
+            String raw = "Denis Sokolov\tdenis.sokolov@example.com\t55550202\t18\t12\tTTG\tМатематика\t"
                     + "Подготовка к экзаменам в 12 классе.Уровень слабый.\t, ПЯТНИЦА, ВОСКРЕСЕНЬЕ\t\t1\tонлайн\t\t"
-                    + "Julia Zimina\t\t50711217011\t48303010225";
+                    + "Anna Sokolova\t\t50711210000\t48303010007";
 
             StudentImportPreviewDto preview = parser.parse(raw);
             ImportedStudentDto s = preview.student();
 
             assertThat(preview.warnings()).isEmpty();
-            assertThat(s.firstName()).isEqualTo("Artjom");
-            assertThat(s.lastName()).isEqualTo("Zimin");
-            assertThat(s.phone()).isEqualTo("58170531");
+            assertThat(s.firstName()).isEqualTo("Denis");
+            assertThat(s.lastName()).isEqualTo("Sokolov");
+            assertThat(s.phone()).isEqualTo("55550202");
             assertThat(s.age()).isEqualTo(18);
             assertThat(s.grade()).isEqualTo(12);
             assertThat(s.preferredDays()).containsExactly(DayOfWeek.FRIDAY, DayOfWeek.SUNDAY);
@@ -77,9 +77,9 @@ class TabStudentImportParserTest {
             assertThat(s.preferredTimeTo()).isNull();
             assertThat(s.lessonFormat()).isEqualTo(LessonFormat.ONLINE);
             assertThat(s.lessonsPerWeek()).isEqualTo(1);
-            assertThat(s.parentName()).isEqualTo("Julia Zimina");
-            assertThat(s.isikukood()).isEqualTo("50711217011");
-            assertThat(s.parentIsikukood()).isEqualTo("48303010225");
+            assertThat(s.parentName()).isEqualTo("Anna Sokolova");
+            assertThat(s.isikukood()).isEqualTo("50711210000");
+            assertThat(s.parentIsikukood()).isEqualTo("48303010007");
             assertThat(s.schedules()).hasSize(2);
         }
     }
@@ -179,13 +179,13 @@ class TabStudentImportParserTest {
 
     @Test
     void case10_extraWhitespaceAndBom() {
-        String raw = "﻿   Kirill   Tsarenkov  \t  ljulap@gmail.com \t 5350 6894 \t 14 \t 9 \t Tlvl \t"
-                + " Эстонский язык \t goal \t ЧЕТВЕРГ \t 17-20 \t 2 \t онлайн \t\t Liudmila \t\t 111 \t 222 ";
+        String raw = "﻿   Maksim   Ivanov  \t  maksim.ivanov@example.com \t 5555 0101 \t 14 \t 9 \t Tlvl \t"
+                + " Эстонский язык \t goal \t ЧЕТВЕРГ \t 17-20 \t 2 \t онлайн \t\t Natalia \t\t 111 \t 222 ";
         ImportedStudentDto s = parser.parse(raw).student();
 
-        assertThat(s.firstName()).isEqualTo("Kirill");
-        assertThat(s.lastName()).isEqualTo("Tsarenkov");
-        assertThat(s.email()).isEqualTo("ljulap@gmail.com");
+        assertThat(s.firstName()).isEqualTo("Maksim");
+        assertThat(s.lastName()).isEqualTo("Ivanov");
+        assertThat(s.email()).isEqualTo("maksim.ivanov@example.com");
         assertThat(s.age()).isEqualTo(14);
         assertThat(s.preferredDays()).containsExactly(DayOfWeek.THURSDAY);
     }
@@ -221,17 +221,17 @@ class TabStudentImportParserTest {
 
     @Test
     void isikukoodIsRecognizedWhereverItSits() {
-        String raw = fields16("A B", "", "51109180029", "", "", "", "", "", "", "", "", "",
+        String raw = fields16("A B", "", "51109180007", "", "", "", "", "", "", "", "", "",
                 "", "Parent Name", "", "");
         ImportedStudentDto s = parser.parse(raw).student();
 
-        assertThat(s.isikukood()).isEqualTo("51109180029");
+        assertThat(s.isikukood()).isEqualTo("51109180007");
         assertThat(s.phone()).isNull();
     }
 
     @Test
     void ageIsDerivedFromTheIsikukoodWhenMissing() {
-        String raw = fields16("A B", "", "51109180029", "", "", "", "", "", "", "", "", "",
+        String raw = fields16("A B", "", "51109180007", "", "", "", "", "", "", "", "", "",
                 "", "Parent Name", "", "");
         StudentImportPreviewDto p = parser.parse(raw);
 
@@ -243,22 +243,22 @@ class TabStudentImportParserTest {
 
     @Test
     void gluedEmailAndPhoneAreSeparated() {
-        String raw = fields16("Kirill Tsarenkov", "ljulap@gmail.com5350 6894", "", "14", "", "", "", "",
-                "", "", "", "", "", "Liudmila Lapshina", "", "");
+        String raw = fields16("Maksim Ivanov", "maksim.ivanov@example.com5555 0101", "", "14", "", "", "", "",
+                "", "", "", "", "", "Natalia Ivanova", "", "");
         ImportedStudentDto s = parser.parse(raw).student();
 
-        assertThat(s.email()).isEqualTo("ljulap@gmail.com");
-        assertThat(s.phone()).isEqualTo("5350 6894");
+        assertThat(s.email()).isEqualTo("maksim.ivanov@example.com");
+        assertThat(s.phone()).isEqualTo("5555 0101");
     }
 
     @Test
     void phoneGluedToIsikukoodIsSplit() {
-        String raw = fields16("A B", "", "5350689451109180029", "", "", "", "", "", "", "", "", "",
+        String raw = fields16("A B", "", "5555010151109180007", "", "", "", "", "", "", "", "", "",
                 "", "Parent Name", "", "");
         ImportedStudentDto s = parser.parse(raw).student();
 
-        assertThat(s.phone()).isEqualTo("53506894");
-        assertThat(s.isikukood()).isEqualTo("51109180029");
+        assertThat(s.phone()).isEqualTo("55550101");
+        assertThat(s.isikukood()).isEqualTo("51109180007");
     }
 
     @Test

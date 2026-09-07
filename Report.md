@@ -98,18 +98,18 @@ J: Итого
 
 Для данных:
 
-Nikita Durmanov
+Pavel Kuznetsov
 studentNumber = 1
-email = nikita.durmanov97@gmail.com
+email = pavel.kuznetsov@example.com
 parentName = null
-isikukood = 39709250057
+isikukood = 39709250002
 subject = Эстонский
 completedLessons = 1
 lessonPrice = 12
 
 строка должна выглядеть:
 
-Nikita Durmanov | 1 | nikita.durmanov97@gmail.com | | 39709250057 | Эстонский | 1 | 12 | 12 |
+Pavel Kuznetsov | 1 | pavel.kuznetsov@example.com | | 39709250002 | Эстонский | 1 | 12 | 12 |
 6. Total Calculation
 
 Сумма для каждого ученика:
@@ -133,12 +133,12 @@ SUM(all student totals)
 
 Student               Lessons   Price   Sum
 --------------------------------------------
-Nikita Durmanov          1       12      12
-Aleksandr Petrov        1       12      12
-Владислава               1       12      12
-Андрей                   2       18      36
-Яна Постникова           1       12      12
-Daniil Orel              1       12      12
+Pavel Kuznetsov          1       12      12
+Konstantin Larin         1       12      12
+Вероника                 1       12      12
+Артур                    2       18      36
+Яна Лебедева             1       12      12
+Timur Karu               1       12      12
 --------------------------------------------
 TOTAL                    7               96
 
@@ -231,12 +231,12 @@ Student X has multiple lesson prices in August.
 
 Имя фамилия латиницей | Номер уч. | Почта | Имя родителя | Isikukood | Предмет | Количество уроков | Цена урока | Сумма | Итого
 
-Nikita Durmanov       | 1  | nikita.durmanov97@gmail.com | | 39709250057 | Эстонский  | 1 | 12 | 12 |
-Aleksandr Petrov      | 3  | tatsm145@gmail.com         | Татьяна | 51011010034 | Эстонский | 1 | 12 | 12 |
-Владислава            | 6  | ksenia.stimmer@gmail.com   | Ксения | 61701090107 | Эстонский | 1 | 12 | 12 |
-Андрей                | 8  |                            |         | 61701090107 | Эстонский | 2 | 18 | 36 |
-Яна Постникова        | 9  |                            |         | 51004090079 | Эстонский | 1 | 12 | 12 |
-Daniil Orel            | 11 | danyaorel3@gmail.com       | Nadiia | 51004090079 | Математика | 1 | 12 | 12 |
+Pavel Kuznetsov       | 1  | pavel.kuznetsov@example.com |        | 39709250002 | Эстонский  | 1 | 12 | 12 |
+Konstantin Larin      | 3  | irina.larina@example.com    | Ирина  | 51011010001 | Эстонский | 1 | 12 | 12 |
+Вероника              | 6  | marina.kask@example.com     | Марина | 61701090009 | Эстонский | 1 | 12 | 12 |
+Артур                 | 8  |                             |        | 61701090009 | Эстонский | 2 | 18 | 36 |
+Яна Лебедева          | 9  |                             |        | 51004090002 | Эстонский | 1 | 12 | 12 |
+Timur Karu            | 11 | timur.karu@example.com      | Marika | 51004090002 | Математика | 1 | 12 | 12 |
 
                                                                                   7       96
 
@@ -336,12 +336,12 @@ Monthly total.
 
 Имя фамилия латиницей | Номер уч. | Почта | Имя родителя | Isikukood | Предмет | Количество уроков | Цена урока | Сумма | Итого
 
-Nikita Durmanov       | 1 | ... | | 39709250057 | Эстонский | 1 | 12 | 12 |
-Aleksandr Petrov      | 3 | ... | Татьяна | 51011010034 | Эстонский | 1 | 12 | 12 |
-Владислава            | 6 | ... | Ксения | 61701090107 | Эстонский | 1 | 12 | 12 |
-Андрей                | 8 | ... | | 61701090107 | Эстонский | 2 | 18 | 36 |
-Яна Постникова        | 9 | ... | | 51004090079 | Эстонский | 1 | 12 | 12 |
-Daniil Orel            | 11 | ... | Nadiia | 51004090079 | Математика | 1 | 12 | 12 |
+Pavel Kuznetsov       | 1  | ... |        | 39709250002 | Эстонский  | 1 | 12 | 12 |
+Konstantin Larin      | 3  | ... | Ирина  | 51011010001 | Эстонский | 1 | 12 | 12 |
+Вероника              | 6  | ... | Марина | 61701090009 | Эстонский | 1 | 12 | 12 |
+Артур                 | 8  | ... |        | 61701090009 | Эстонский | 2 | 18 | 36 |
+Яна Лебедева          | 9  | ... |        | 51004090002 | Эстонский | 1 | 12 | 12 |
+Timur Karu            | 11 | ... | Marika | 51004090002 | Математика | 1 | 12 | 12 |
 
                                                                   7 | | | 96
 16. Spreadsheet Formatting
@@ -479,7 +479,7 @@ isikukood
 
 Например:
 
-Андрей | 8 | | | 61701090107 | Эстонский | 2 | 18 | 36
+Артур | 8 | | | 61701090009 | Эстонский | 2 | 18 | 36
 22. Report Validation
 
 Перед экспортом проверить:

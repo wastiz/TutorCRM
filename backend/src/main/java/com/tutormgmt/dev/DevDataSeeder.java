@@ -108,29 +108,29 @@ public class DevDataSeeder {
         LocalDate today = LocalDate.now();
         List<StudentRequest> requests = List.of(
                 StudentRequest.builder()
-                        .firstName("Kirill").lastName("Tsarenkov").email("kirill.tsarenkov@example.com")
-                        .phone("5350 6894").isikukood("51109180029").age(14).grade(9).school("Tallinna Tõnismäe")
+                        .firstName("Maksim").lastName("Ivanov").email("maksim.ivanov@example.com")
+                        .phone("5555 0101").isikukood("51109180007").age(14).grade(9).school("Tallinna Tõnismäe")
                         .subject("Эстонский язык").level("Слабый")
                         .goal("Слабый, особенно речь, нужна подготовка к экзамену")
                         .lessonFormat(LessonFormat.BOTH).lessonPrice(new BigDecimal("25.00"))
                         .status(StudentStatus.ACTIVE).startDate(today.minusWeeks(HISTORY_WEEKS))
-                        .telegram("kirill_ts")
-                        .parentName("Liudmila Lapshina").parentPhone("5110 9180")
-                        .parentEmail("liudmila.lapshina@example.com").parentIsikukood("47808060232")
+                        .telegram("maksim_ts")
+                        .parentName("Natalia Ivanova").parentPhone("5555 0303")
+                        .parentEmail("natalia.ivanova@example.com").parentIsikukood("47808060003")
                         .schedules(List.of(new StudentRequest.ScheduleEntry(
                                 DayOfWeek.THURSDAY, LocalTime.of(17, 0), LocalTime.of(20, 0), 2)))
                         .ignoreDuplicates(true).build(),
 
                 StudentRequest.builder()
-                        .firstName("Artjom").lastName("Zimin").email("artjom.zimin@example.com")
-                        .phone("5817 0531").isikukood("50712217016").age(18).grade(12).school("TTG")
+                        .firstName("Denis").lastName("Sokolov").email("denis.sokolov@example.com")
+                        .phone("5817 0531").isikukood("50712210004").age(18).grade(12).school("TTG")
                         .subject("Математика").level("Слабый")
                         .goal("Подготовка к экзаменам в 12 классе")
                         .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("25.00"))
                         .status(StudentStatus.ACTIVE).startDate(today.minusWeeks(HISTORY_WEEKS - 2))
-                        .telegram("artjom_z")
-                        .parentName("Julia Zimina").parentEmail("julia.zimina@example.com")
-                        .parentIsikukood("38204110559")
+                        .telegram("denis_z")
+                        .parentName("Anna Sokolova").parentEmail("anna.sokolova@example.com")
+                        .parentIsikukood("38204110003")
                         .schedules(List.of(
                                 new StudentRequest.ScheduleEntry(DayOfWeek.FRIDAY, LocalTime.of(16, 0),
                                         LocalTime.of(17, 30), 1),
@@ -140,7 +140,7 @@ public class DevDataSeeder {
 
                 StudentRequest.builder()
                         .firstName("Maria").lastName("Kask").email("maria.kask@example.com")
-                        .phone("+372 5566 7788").isikukood("60903140178").age(16).grade(10)
+                        .phone("+372 5566 7788").isikukood("60903140005").age(16).grade(10)
                         .school("Tallinna Reaalkool").subject("Физика").level("Средний")
                         .goal("Подтянуть механику перед контрольными")
                         .lessonFormat(LessonFormat.OFFLINE).lessonPrice(new BigDecimal("30.00"))
@@ -153,7 +153,7 @@ public class DevDataSeeder {
 
                 StudentRequest.builder()
                         .firstName("Daniil").lastName("Orlov").email("daniil.orlov@example.com")
-                        .phone("5901 2233").isikukood("61205070447").age(13).grade(7)
+                        .phone("5901 2233").isikukood("61205070000").age(13).grade(7)
                         .school("Lasnamäe Gümnaasium").subject("Английский язык").level("Начальный")
                         .goal("Разговорная практика, подтянуть грамматику")
                         .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("20.00"))
@@ -173,7 +173,7 @@ public class DevDataSeeder {
 
                 StudentRequest.builder()
                         .firstName("Mihkel").lastName("Saar").email("mihkel.saar@example.com")
-                        .phone("5432 1010").isikukood("51001301201").age(15).grade(9)
+                        .phone("5432 1010").isikukood("51001300008").age(15).grade(9)
                         .school("Pelgulinna Gümnaasium").subject("Эстонский язык").level("Средний")
                         .goal("Пауза до конца учебного года — семья в отъезде")
                         .lessonFormat(LessonFormat.BOTH).lessonPrice(new BigDecimal("25.00"))
@@ -186,7 +186,7 @@ public class DevDataSeeder {
 
                 StudentRequest.builder()
                         .firstName("Jelena").lastName("Volkova").email("jelena.volkova@example.com")
-                        .phone("5678 4321").isikukood("60811020881").age(17).grade(11)
+                        .phone("5678 4321").isikukood("60811020009").age(17).grade(11)
                         .school("Kadrioru Saksa Gümnaasium").subject("Математика").level("Хороший")
                         .goal("Готовились к экзамену — сдали")
                         .lessonFormat(LessonFormat.ONLINE).lessonPrice(new BigDecimal("25.00"))
@@ -198,7 +198,7 @@ public class DevDataSeeder {
 
                 StudentRequest.builder()
                         .firstName("Roman").lastName("Ilves").email("roman.ilves@example.com")
-                        .phone("5099 8877").isikukood("51306090152").age(12).grade(6)
+                        .phone("5099 8877").isikukood("51306090003").age(12).grade(6)
                         .school("Mustamäe Gümnaasium").subject("Английский язык").level("Начальный")
                         .lessonFormat(LessonFormat.OFFLINE).lessonPrice(new BigDecimal("22.00"))
                         .status(StudentStatus.FINISHED)

@@ -13,27 +13,27 @@ class FreeTextStudentImportParserTest {
 
     @Test
     void readsAProseMessage() {
-        String raw = "Здравствуйте! Ученик Kirill Tsarenkov, 14 лет, 9 класс, "
-                + "почта ljulap@gmail.com, телефон 5350 6894, isikukood 51109180029. "
+        String raw = "Здравствуйте! Ученик Maksim Ivanov, 14 лет, 9 класс, "
+                + "почта maksim.ivanov@example.com, телефон 5555 0101, isikukood 51109180007. "
                 + "Занятия четверг 17-20, 2 раза в неделю, оба варианта подходят. "
-                + "Мама Liudmila Lapshina, тел +372 5110 9180.";
+                + "Мама Natalia Ivanova, тел +372 5555 0303.";
 
         ImportedStudentDto s = parser.parse(raw).student();
 
-        assertThat(s.firstName()).isEqualTo("Kirill");
-        assertThat(s.lastName()).isEqualTo("Tsarenkov");
+        assertThat(s.firstName()).isEqualTo("Maksim");
+        assertThat(s.lastName()).isEqualTo("Ivanov");
         assertThat(s.age()).isEqualTo(14);
         assertThat(s.grade()).isEqualTo(9);
-        assertThat(s.email()).isEqualTo("ljulap@gmail.com");
-        assertThat(s.phone()).isEqualTo("5350 6894");
-        assertThat(s.isikukood()).isEqualTo("51109180029");
+        assertThat(s.email()).isEqualTo("maksim.ivanov@example.com");
+        assertThat(s.phone()).isEqualTo("5555 0101");
+        assertThat(s.isikukood()).isEqualTo("51109180007");
         assertThat(s.preferredDays()).containsExactly(DayOfWeek.THURSDAY);
         assertThat(s.preferredTimeFrom()).isEqualTo("17:00");
         assertThat(s.preferredTimeTo()).isEqualTo("20:00");
         assertThat(s.lessonsPerWeek()).isEqualTo(2);
         assertThat(s.lessonFormat()).isEqualTo(LessonFormat.BOTH);
-        assertThat(s.parentName()).isEqualTo("Liudmila Lapshina");
-        assertThat(s.parentPhone()).isEqualTo("+372 5110 9180");
+        assertThat(s.parentName()).isEqualTo("Natalia Ivanova");
+        assertThat(s.parentPhone()).isEqualTo("+372 5555 0303");
     }
 
     @Test
@@ -41,7 +41,7 @@ class FreeTextStudentImportParserTest {
         String raw = String.join("\n",
                 "Anna Ivanova",
                 "anna@mail.ee",
-                "58170531",
+                "55550202",
                 "онлайн",
                 "пятница");
 
@@ -50,20 +50,20 @@ class FreeTextStudentImportParserTest {
         assertThat(s.firstName()).isEqualTo("Anna");
         assertThat(s.lastName()).isEqualTo("Ivanova");
         assertThat(s.email()).isEqualTo("anna@mail.ee");
-        assertThat(s.phone()).isEqualTo("58170531");
+        assertThat(s.phone()).isEqualTo("55550202");
         assertThat(s.lessonFormat()).isEqualTo(LessonFormat.ONLINE);
         assertThat(s.preferredDays()).containsExactly(DayOfWeek.FRIDAY);
     }
 
     @Test
     void separatesValuesThatWerePastedWithoutSeparators() {
-        ImportedStudentDto s = parser.parse("AnnaIvanova anna@mail.ee58170531 51109180029").student();
+        ImportedStudentDto s = parser.parse("AnnaIvanova anna@mail.ee55550202 51109180007").student();
 
         assertThat(s.firstName()).isEqualTo("Anna");
         assertThat(s.lastName()).isEqualTo("Ivanova");
         assertThat(s.email()).isEqualTo("anna@mail.ee");
-        assertThat(s.phone()).isEqualTo("58170531");
-        assertThat(s.isikukood()).isEqualTo("51109180029");
+        assertThat(s.phone()).isEqualTo("55550202");
+        assertThat(s.isikukood()).isEqualTo("51109180007");
     }
 
     @Test

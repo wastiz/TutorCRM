@@ -65,7 +65,7 @@ class ReportServiceIT extends AbstractPostgresIT {
 
     @Test
     void countsOnlyCompletedLessonsInTheMonth() {
-        UUID sid = student("Nikita", "Durmanov", "nikita@x.ee", null, "39709250057", new BigDecimal("12"));
+        UUID sid = student("Pavel", "Kuznetsov", "pavel@x.ee", null, "39709250002", new BigDecimal("12"));
         completedLesson(sid, aug(3), new BigDecimal("12"), LessonStatus.COMPLETED);
         completedLesson(sid, aug(10), new BigDecimal("12"), LessonStatus.PLANNED);   // excluded
         completedLesson(sid, aug(17), new BigDecimal("12"), LessonStatus.CANCELLED); // excluded
@@ -79,8 +79,8 @@ class ReportServiceIT extends AbstractPostgresIT {
         assertThat(report.totalLessons()).isEqualTo(1);
         assertThat(report.totalAmount()).isEqualByComparingTo("12");
         assertThat(report.students()).singleElement().satisfies(r -> {
-            assertThat(r.fullName()).isEqualTo("Nikita Durmanov");
-            assertThat(r.isikukood()).isEqualTo("39709250057");
+            assertThat(r.fullName()).isEqualTo("Pavel Kuznetsov");
+            assertThat(r.isikukood()).isEqualTo("39709250002");
             assertThat(r.parentName()).isNull();
             assertThat(r.lessonCount()).isEqualTo(1);
             assertThat(r.total()).isEqualByComparingTo("12");
@@ -141,7 +141,7 @@ class ReportServiceIT extends AbstractPostgresIT {
 
     @Test
     void missingEmailAndParentAreEmptyNotBlocking() {
-        UUID sid = student("Андрей", "NoContact", null, null, "8", new BigDecimal("18"));
+        UUID sid = student("Артур", "NoContact", null, null, "8", new BigDecimal("18"));
         completedLesson(sid, aug(6), new BigDecimal("18"), LessonStatus.COMPLETED);
         completedLesson(sid, aug(13), new BigDecimal("18"), LessonStatus.COMPLETED);
 
