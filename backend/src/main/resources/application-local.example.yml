@@ -1,6 +1,10 @@
 # Copy to application-local.yml and fill in real values, then run with
 #   SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 # application-local.yml is git-ignored.
+logging:
+  level:
+    com.tutormgmt: DEBUG
+
 spring:
   security:
     oauth2:

@@ -6,6 +6,11 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/tutor}
     username: ${DATABASE_USERNAME:tutor}
     password: ${DATABASE_PASSWORD:tutor}
+    hikari:
+      # a handful of tutors never needs the default 10; each connection also costs
+      # 5-10 MB on the Postgres side
+      maximum-pool-size: ${DB_POOL_MAX:5}
+      minimum-idle: 1
 
   jpa:
     open-in-view: false
@@ -47,6 +52,11 @@ spring:
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+  tomcat:
+    threads:
+      # default is 200; each thread reserves a stack we never use
+      max: 20
+      min-spare: 5
 
 app:
   # Base URL of THIS backend service (used to build the OAuth redirect URI)
@@ -69,7 +79,7 @@ app:
 
 logging:
   level:
-    com.tutormgmt: ${LOG_LEVEL_APP:DEBUG}
+    com.tutormgmt: ${LOG_LEVEL_APP:INFO}
     org.springframework.security: INFO
 
 management:
